@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TABI NOTE — 自分だけの旅ガイド</title>
+<style>
+:root{
+  --bg:#F5F5F2;
+  --card:#FFFFFF;
+  --ink:#15171C;
+  --sub:#71747C;
+  --line:#E6E6E1;
+  --line-soft:#EEEEEA;
+  --accent:#2B4BF2;
+  --accent-soft:#E9EDFE;
+  --g-food:#CE4B32;
+  --g-sight:#2B4BF2;
+  --g-shop:#A87E1F;
+  --g-grocery:#38845B;
+  --g-event:#7757C9;
+  --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho",Georgia,serif;
+  --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --mono:ui-monospace,"SF Mono","Menlo","Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  font-family:var(--sans);background:var(--bg);color:var(--ink);
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
+a{color:var(--accent)}
+::selection{background:var(--accent);color:#fff}
+
+/* ===== frame ===== */
+.app{max-width:640px;margin:0 auto;min-height:100vh;padding:0 22px 130px;position:relative}
+header.appbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 2px 14px;border-bottom:1px solid var(--ink);margin-bottom:26px;
+}
+.appbar .logo{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.34em}
+.appbar .logo b{color:var(--accent)}
+.appbar .tagline{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--sub)}
+main .view{animation:enter .3s ease both}
+@keyframes enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* floating nav */
+nav.tabs{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:40;
+  display:flex;gap:2px;background:rgba(21,23,28,.94);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-radius:99px;padding:5px;box-shadow:0 10px 30px rgba(21,23,28,.28);
+}
+nav.tabs button{
+  padding:11px 26px;border-radius:99px;color:#9FA2AA;
+  font-size:13px;font-weight:700;letter-spacing:.1em;
+  display:flex;align-items:center;gap:8px;transition:all .2s ease;
+}
+nav.tabs button .dot{width:5px;height:5px;border-radius:50%;background:transparent;transition:background .2s}
+nav.tabs button.on{background:#fff;color:var(--ink)}
+nav.tabs button.on .dot{background:var(--accent)}
+
+/* ===== common ===== */
+.eyebrow{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.3em;
+  color:var(--sub);margin-bottom:8px;text-transform:uppercase;
+}
+h1.page{
+  font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.02em;
+  line-height:1.3;margin-bottom:22px;
+}
+.rule{border:none;border-top:1px solid var(--line);margin:26px 0}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 22px;border-radius:12px;font-size:13.5px;font-weight:700;
+  background:var(--ink);color:#fff;letter-spacing:.06em;
+  transition:transform .15s ease,opacity .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn.accent{background:var(--accent)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.btn.small{padding:8px 14px;font-size:12px;border-radius:9px}
+.btn.wfull{width:100%}
+.btn:disabled{opacity:.4;cursor:default}
+.back{
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--sub);
+  margin-bottom:18px;display:inline-flex;align-items:center;gap:6px;font-weight:700;
+}
+.xbtn{font-size:15px;color:var(--sub);padding:6px 9px;border-radius:8px;line-height:1}
+.xbtn:active{background:var(--line-soft)}
+.empty{padding:52px 10px;text-align:center}
+.empty .mark{
+  font-family:var(--serif);font-size:26px;color:var(--sub);
+  display:inline-block;border:1px solid var(--line);border-radius:50%;
+  width:64px;height:64px;line-height:62px;margin-bottom:14px;
+}
+.empty p{font-size:13.5px;color:var(--sub)}
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+  color:var(--sub);margin-bottom:7px;font-weight:700;
+}
+.field input[type=text],.field input[type=date],.field input[type=time],.field input[type=number],.field select,.field textarea{
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;
+  transition:border-color .15s;
+}
+.field textarea{resize:vertical;min-height:80px;line-height:1.6}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.row2{display:flex;gap:12px}
+.row2>.field{flex:1}
+.hint{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
+
+/* ===== city index ===== */
+.city-item{
+  display:flex;width:100%;text-align:left;align-items:baseline;gap:14px;
+  padding:22px 2px;border-bottom:1px solid var(--line);
+  transition:padding .2s ease;
+}
+.city-item:active{padding-left:8px}
+.city-item h3{font-family:var(--serif);font-size:26px;font-weight:600;flex:1;line-height:1.35}
+.city-item .cnt{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--sub)}
+.city-item .arw{font-family:var(--mono);color:var(--accent);font-size:15px}
+.addline{
+  display:flex;width:100%;align-items:center;gap:10px;padding:20px 2px;
+  color:var(--sub);font-family:var(--mono);font-size:12px;letter-spacing:.2em;font-weight:700;
+}
+.addline .pl{
+  width:26px;height:26px;border:1px dashed var(--sub);border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px;
+}
+
+/* ===== place cards ===== */
+.toolbar{display:flex;gap:10px;margin-bottom:18px}
+.toolbar .btn{flex:1}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 18px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.12em;
+  padding:7px 15px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--sub);
+  transition:all .15s;
+}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.near-note{
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--accent);
+  font-weight:700;margin-bottom:14px;
+}
+.place-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 18px 14px;margin-bottom:14px;
+  box-shadow:0 1px 2px rgba(21,23,28,.04);
+}
+.pc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.gtag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--sub);
+}
+.gtag .gd{width:7px;height:7px;border-radius:50%;background:var(--gc,var(--sub))}
+.dist-chip{
+  margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.08em;
+  color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:99px;
+}
+.place-card h4{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.45}
+.place-card .summary{font-size:13px;color:var(--sub);margin-top:6px}
+.pc-foot{display:flex;align-items:center;gap:16px;margin-top:12px;border-top:1px solid var(--line-soft);padding-top:10px}
+.pc-foot a{
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em;
+  text-decoration:none;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:1px;
+}
+.pc-foot .xbtn{margin-left:auto}
+
+/* ===== trips ===== */
+.trip-card{
+  display:flex;width:100%;text-align:left;background:var(--card);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:14px;
+  box-shadow:0 1px 2px rgba(21,23,28,.04);transition:transform .15s ease;
+}
+.trip-card:active{transform:scale(.985)}
+.trip-stub{
+  flex:none;width:92px;background:var(--ink);color:#fff;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px 8px;font-family:var(--mono);gap:1px;
+}
+.trip-stub::after{content:"";position:absolute;right:-1px;top:10px;bottom:10px;border-right:1.5px dashed rgba(255,255,255,.4)}
+.trip-stub .mo{font-size:10px;letter-spacing:.24em;opacity:.7}
+.trip-stub .dd{font-size:25px;font-weight:700;line-height:1.2}
+.trip-stub .dv{font-size:10px;opacity:.5;margin:2px 0}
+.trip-body{flex:1;padding:16px 16px 14px}
+.trip-body h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.4}
+.trip-body .meta{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--sub);margin-top:5px}
+.trip-body .fmini{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--accent);margin-top:5px;font-weight:700}
+
+/* trip detail */
+.hero{
+  background:var(--ink);color:#fff;border-radius:18px;padding:24px 22px 20px;margin-bottom:26px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:"";position:absolute;left:22px;right:22px;top:56px;
+  border-top:1px dashed rgba(255,255,255,.25);
+}
+.hero .eyebrow{color:#8F93A0;margin-bottom:16px}
+.hero h2{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.4}
+.hero .dates{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:#B9BCC6;margin-top:6px}
+.hero .xbtn{position:absolute;top:14px;right:12px;color:#8F93A0}
+.flight-card{
+  background:var(--card);border:1px solid var(--line);border-radius:13px;
+  padding:13px 16px;margin-bottom:10px;font-family:var(--mono);
+  display:flex;align-items:center;gap:14px;
+}
+.flight-card .fno{
+  font-weight:700;font-size:12.5px;letter-spacing:.08em;color:var(--accent);
+  background:var(--accent-soft);padding:3px 10px;border-radius:7px;
+}
+.flight-card .route{flex:1;font-size:13px;letter-spacing:.03em}
+.flight-card .route .t{font-weight:700}
+.flight-card .fdate{font-size:10.5px;color:var(--sub);letter-spacing:.1em}
+.day-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.day-chips::-webkit-scrollbar{display:none}
+.day-chip{
+  flex:none;min-width:66px;text-align:center;border:1px solid var(--line);
+  border-radius:12px;padding:9px 12px 7px;background:#fff;font-family:var(--mono);transition:all .15s;
+}
+.day-chip .dw{font-size:9.5px;letter-spacing:.2em;color:var(--sub);display:block}
+.day-chip .dd{font-size:15.5px;font-weight:700}
+.day-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.day-chip.on .dw{color:rgba(255,255,255,.75)}
+.dayhead{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.dayhead .start{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;font-weight:700;color:var(--sub)}
+.dayhead input[type=time]{padding:6px 9px;border:1px solid var(--line);border-radius:9px;font-family:var(--mono);background:#fff}
+
+/* timeline */
+.tl-item{display:flex;gap:14px;margin-bottom:12px}
+.tl-time{
+  flex:none;width:84px;font-family:var(--mono);font-size:12px;font-weight:700;
+  text-align:right;padding-top:14px;line-height:1.55;letter-spacing:.03em;
+}
+.tl-time .end{color:var(--sub);font-weight:400;font-size:11px}
+.tl-node{flex:none;width:12px;position:relative}
+.tl-node::before{content:"";position:absolute;left:5px;top:0;bottom:-12px;border-left:1.5px solid var(--line)}
+.tl-item:last-child .tl-node::before{height:19px;bottom:auto}
+.tl-node::after{
+  content:"";position:absolute;left:0;top:17px;width:11px;height:11px;border-radius:50%;
+  background:var(--dotc,var(--accent));box-shadow:0 0 0 3px var(--bg);
+}
+.tl-card{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 14px}
+.tl-card .nm{font-family:var(--serif);font-weight:600;font-size:15.5px;line-height:1.45}
+.tl-card .gsm{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--sub);margin-top:2px}
+.tl-ctrl{display:flex;align-items:center;gap:6px;margin-top:9px;border-top:1px solid var(--line-soft);padding-top:8px}
+.tl-ctrl input{width:62px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px}
+.tl-ctrl .u{font-size:11px;color:var(--sub);margin-right:auto}
+.tl-item.travel{margin:-4px 0 8px}
+.tl-item.travel .tl-node::before{border-left-style:dotted}
+.tl-item.travel .tl-node::after{display:none}
+.travel-pill{
+  flex:1;display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;font-weight:700;color:var(--sub);
+  padding:4px 2px;
+}
+.travel-pill .car{font-size:12px}
+.travel-pill input{
+  width:52px;padding:3px 6px;border:1px solid var(--line);border-radius:7px;
+  font-family:var(--mono);font-size:11.5px;text-align:center;background:#fff;color:var(--ink);
+}
+.travel-pill .src{font-size:9px;letter-spacing:.12em;color:var(--accent);opacity:.85}
+.drive-busy{
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.spinner.blue{border-color:rgba(43,75,242,.25);border-top-color:var(--accent);width:11px;height:11px}
+.tl-flight{flex:1;border-radius:13px;padding:12px 14px;background:var(--ink);color:#fff;font-family:var(--mono)}
+.tl-flight .nm{font-size:13px;font-weight:700;letter-spacing:.06em}
+.tl-flight .gsm{font-size:11px;opacity:.72;margin-top:2px;letter-spacing:.04em}
+
+/* ===== modal ===== */
+.overlay{
+  position:fixed;inset:0;background:rgba(21,23,28,.45);z-index:60;
+  display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(26px);opacity:.5}to{transform:none;opacity:1}}
+.sheet{
+  background:var(--bg);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+  border-radius:22px 22px 0 0;padding:0 22px 30px;animation:rise .25s cubic-bezier(.2,.8,.3,1);
+}
+.sheet .grab{width:40px;height:4px;border-radius:99px;background:var(--line);margin:12px auto 6px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 0 18px}
+.sheet-head h3{font-family:var(--serif);font-size:20px;font-weight:600}
+.seg{display:flex;background:#E9E9E5;border-radius:12px;padding:3px;margin-bottom:20px}
+.seg button{
+  flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;
+  color:var(--sub);letter-spacing:.04em;transition:all .15s;
+}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(21,23,28,.12)}
+.ai-result{
+  border:1px solid var(--accent);border-radius:14px;padding:16px;margin:16px 0;background:#fff;
+}
+.ai-result .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--accent);font-weight:700;margin-bottom:12px}
+.ai-result .lbl.err{color:var(--g-food)}
+.spinner{
+  display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;
+}
+.spinner.dark{border-color:rgba(21,23,28,.2);border-top-color:var(--ink)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* bulk import */
+.prog{margin:16px 0}
+.prog-bar{height:5px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s ease}
+.prog-txt{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--sub);margin-top:8px;font-weight:700}
+.bulk-item{
+  display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
+  border-radius:13px;padding:13px 15px;margin-bottom:9px;
+}
+.bulk-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);margin-top:3px}
+.bulk-item .bi{flex:1}
+.bulk-item .bi .n{font-family:var(--serif);font-weight:600;font-size:14.5px}
+.bulk-item .bi .s{font-size:12px;color:var(--sub);margin-top:2px}
+.bulk-item .bi .g{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--sub);margin-top:3px}
+.bulk-item.fail{opacity:.55}
+
+/* picker */
+.pick-item{
+  display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);
+  border-radius:13px;padding:12px 15px;margin-bottom:9px;
+}
+.pick-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.pick-item .pi-body{flex:1}
+.pick-item .pi-body .n{font-weight:700;font-size:13.5px}
+.pick-item .pi-body .g{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--sub)}
+.pick-item .dur{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub)}
+.pick-item .dur input{width:56px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px}
+
+/* shiori */
+.shiori{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
+.shiori .head{background:var(--ink);color:#fff;text-align:center;padding:18px 16px 15px}
+.shiori .head .eyebrow{color:#8F93A0;margin-bottom:8px}
+.shiori .head h2{font-family:var(--serif);font-size:21px;font-weight:600}
+.shiori .head .sd{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:#B9BCC6;margin-top:4px}
+.shiori .in{padding:8px 20px 18px}
+.shiori .sday{margin-top:16px}
+.shiori .sday h4{
+  font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--accent);font-weight:700;
+  border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:9px;
+}
+.shiori .sline{display:flex;gap:12px;font-size:13px;margin-bottom:5px}
+.shiori .sline .st{font-family:var(--mono);font-size:11px;flex:none;width:90px;color:var(--sub);padding-top:2px;letter-spacing:.02em}
+.shiori .sline.fl .sn{color:var(--accent);font-weight:700;font-family:var(--mono);font-size:12.5px}
+
+#toast{
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.04em;
+  padding:11px 20px;border-radius:99px;opacity:0;pointer-events:none;
+  transition:all .25s ease;z-index:99;max-width:86%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#boot{
+  position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+#boot .logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.4em}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+<div id="boot"><div class="logo">TABI<b style="color:var(--accent)">—</b>NOTE</div><span class="spinner dark"></span></div>
+<div class="app">
+  <header class="appbar">
+    <span class="logo">TABI<b>—</b>NOTE</span>
+    <span class="tagline">MY OWN GUIDEBOOK</span>
+  </header>
+  <main id="main"></main>
+</div>
+<nav class="tabs">
+  <button id="tab-places" class="on" onclick="go('cities')"><span class="dot"></span>行き先</button>
+  <button id="tab-trips" onclick="go('trips')"><span class="dot"></span>旅程</button>
+</nav>
+<div id="modal-root"></div>
+<div id="toast"></div>
+<script>
+/* ============ state & storage ============ */
+const KEY="tabinote-v1";
+let D={cities:[],places:[],trips:[]};
+let S={view:"cities",cityId:null,tripId:null,dayKey:null,filter:"all",near:false,userPos:null};
+const $=s=>document.querySelector(s);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const GENRES=["食事","観光","買い物","食料品","イベント"];
+const GCOLOR={"食事":"var(--g-food)","観光":"var(--g-sight)","買い物":"var(--g-shop)","食料品":"var(--g-grocery)","イベント":"var(--g-event)"};
+const GPAL=["#C2554F","#3D6FB0","#8A6FBF","#3E8A72","#B0762E","#6B7A46","#A34E7E"];
+function allGenres(){return[...GENRES,...(D.customGenres||[]).map(g=>g.name)]}
+function genreColor(g){
+  if(GCOLOR[g])return GCOLOR[g];
+  const c=(D.customGenres||[]).find(x=>x.name===g);
+  return c?c.color:"var(--sub)";
+}
+function genreOptions(sel){
+  return allGenres().map(g=>`<option ${g===sel?"selected":""}>${esc(g)}</option>`).join("")
+    +`<option value="__new__">＋ 新しいジャンルを追加…</option>`;
+}
+async function genreSel(el){
+  if(el.value!=="__new__"){el.dataset.prev=el.value;return;}
+  const n=(prompt("新しいジャンル名を入力(例: カフェ / ビーチ / 夜遊び)")||"").trim();
+  if(!n){el.value=el.dataset.prev||GENRES[0];return;}
+  if(!allGenres().includes(n)){
+    D.customGenres.push({name:n,color:GPAL[D.customGenres.length%GPAL.length]});
+    await save();
+  }
+  el.innerHTML=genreOptions(n);el.dataset.prev=n;
+  toast("ジャンル「"+n+"」を追加しました");
+}
+
+async function load(){
+  try{const r=await window.storage.get(KEY);if(r&&r.value)D=JSON.parse(r.value);}catch(e){/* first run */}
+  if(!D.customGenres)D.customGenres=[];
+  migrateDays();
+  $("#boot").remove();render();
+}
+async function save(){
+  try{await window.storage.set(KEY,JSON.stringify(D));}
+  catch(e){toast("保存に失敗しました。通信環境をご確認ください");}
+}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove("show"),2600);}
+
+/* ============ helpers ============ */
+function city(id){return D.cities.find(c=>c.id===id)}
+function place(id){return D.places.find(p=>p.id===id)}
+function trip(id){return D.trips.find(t=>t.id===id)}
+function fmtD(iso){const d=new Date(iso+"T00:00:00");return (d.getMonth()+1)+"/"+d.getDate()+" "+"日月火水木金土"[d.getDay()]}
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function daysBetween(a,b){
+  const out=[];let d=new Date(a+"T00:00:00");const e=new Date(b+"T00:00:00");let i=0;
+  while(d<=e&&i<60){out.push(ymd(d));d.setDate(d.getDate()+1);i++;}
+  return out;
+}
+/* 旧バージョンで1日前にズレて保存されたデータを正しい日付へ移す */
+function migrateDays(){
+  (D.trips||[]).forEach(t=>{
+    const valid=new Set(daysBetween(t.start,t.end));
+    Object.keys(t.days||{}).forEach(k=>{
+      if(valid.has(k))return;
+      const d=new Date(k+"T00:00:00");d.setDate(d.getDate()+1);
+      const nk=ymd(d);
+      if(valid.has(nk)&&!t.days[nk])t.days[nk]=t.days[k];
+      delete t.days[k];
+    });
+  });
+}
+function addMin(hhmm,min){
+  let[h,m]=hhmm.split(":").map(Number);m+=min;h+=Math.floor(m/60);m%=60;h%=24;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+function haversine(a,b){
+  const R=6371,r=x=>x*Math.PI/180;
+  const dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function fmtKm(k){return k<1?Math.round(k*1000)+"m":k.toFixed(1)+"km"}
+/* ---- drive-time ---- */
+function round5(n){return Math.max(5,Math.round(n/5)*5)}
+function estTravel(pa,pb){
+  if(!pa||!pb||pa.lat==null||pb.lat==null)return null;
+  const km=haversine(pa,pb)*1.35;            // 道路係数
+  return round5(km/28*60);                    // 市街地 約28km/h
+}
+function recalcTravel(day,resetManual){
+  const items=day.items;
+  items.forEach((it,i)=>{
+    if(i===0){it.tMin=null;it.tSrc=null;return;}
+    if(!resetManual&&it.tSrc==="manual")return;
+    const a=place(items[i-1].placeId),b=place(it.placeId);
+    const e=estTravel(a,b);
+    it.tMin=e;it.tSrc=e!=null?"est":null;
+  });
+}
+let _aiTravelTimer=null;
+function autoAiTravel(){
+  clearTimeout(_aiTravelTimer);
+  _aiTravelTimer=setTimeout(()=>aiTravel(),1200);
+}
+async function aiTravel(){
+  const t=trip(S.tripId);if(!t)return;
+  const day=dayObj(t,S.dayKey);
+  const pairs=[];
+  day.items.forEach((it,i)=>{
+    if(i===0||it.tSrc==="manual")return;
+    const a=place(day.items[i-1].placeId),b=place(it.placeId);
+    if(a&&b)pairs.push({i,a,b});
+  });
+  if(!pairs.length)return;
+  S.travelBusy=true;render();
+  try{
+    const c=t.cityId?city(t.cityId):null;
+    const list=pairs.map((p,n)=>{
+      const ca=p.a.lat!=null?`(${p.a.lat},${p.a.lng})`:"";
+      const cb=p.b.lat!=null?`(${p.b.lat},${p.b.lng})`:"";
+      return `${n+1}. ${p.a.name}${ca} → ${p.b.name}${cb}`;
+    }).join("\n");
+    const text=await askClaude(`以下は旅行中の1日の移動区間リストです${c?"(都市: "+c.name+")":""}。各区間について、車(タクシー・レンタカー)でのおおよその移動時間(分)を、地理知識と必要に応じてウェブ検索で見積もってください。
+${list}
+
+出力フォーマット(JSON配列以外は一切出力しない。必ず${pairs.length}件、同じ順序で):
+[{"min":移動時間の整数(分)}]`,true,2000);
+    const arr=pickJSONArr(text);
+    pairs.forEach((p,n)=>{
+      const day2=dayObj(trip(S.tripId),S.dayKey);
+      const it=day2.items[p.i];
+      if(it&&it.tSrc!=="manual"&&arr[n]&&typeof arr[n].min==="number"){
+        it.tMin=round5(arr[n].min);it.tSrc="ai";
+      }
+    });
+    await save();
+  }catch(e){/* 推定値のまま */}
+  S.travelBusy=false;render();
+}
+async function setTravel(i,v){
+  const it=dayObj(trip(S.tripId),S.dayKey).items[i];
+  it.tMin=Math.max(0,parseInt(v)||0);it.tSrc="manual";
+  render();await save();
+}
+function coordsFromUrl(u){
+  let m=u.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
+  m=u.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
+  m=u.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
+  return null;
+}
+function nameFromUrl(u){
+  const m=u.match(/\/place\/([^\/@?]+)/);
+  if(!m)return null;
+  try{return decodeURIComponent(m[1]).replace(/\+/g," ")}catch(e){return m[1].replace(/\+/g," ")}
+}
+function isShortMapUrl(u){return /(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/.test(u)}
+function mapLink(p){
+  if(p.mapUrl)return p.mapUrl;
+  if(p.lat!=null&&p.lng!=null)return"https://www.google.com/maps?q="+p.lat+","+p.lng;
+  return"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.name);
+}
+
+/* ============ Claude API ============ */
+async function askClaude(prompt,useSearch,maxTok){
+  const body={model:"claude-sonnet-4-6",max_tokens:maxTok||2500,messages:[{role:"user",content:prompt}]};
+  if(useSearch)body.tools=[{type:"web_search_20250305",name:"web_search"}];
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)
+  });
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message||"API error");
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  if(!text)throw new Error("empty response");
+  return text;
+}
+function pickJSON(t){
+  const c=t.replace(/```json|```/g,"").trim();
+  const s=c.indexOf("{"),e=c.lastIndexOf("}");
+  if(s<0||e<0)throw new Error("no json");
+  return JSON.parse(c.slice(s,e+1));
+}
+function pickJSONArr(t){
+  const c=t.replace(/```json|```/g,"").trim();
+  const s=c.indexOf("["),e=c.lastIndexOf("]");
+  if(s<0||e<0)throw new Error("no json");
+  return JSON.parse(c.slice(s,e+1));
+}
+
+/* ============ navigation ============ */
+function go(view,arg){
+  S.view=view;
+  if(view==="city"){S.cityId=arg;S.filter="all";S.near=false;}
+  if(view==="trip"){S.tripId=arg;const t=trip(arg);S.dayKey=t?daysBetween(t.start,t.end)[0]:null;}
+  document.querySelector("#tab-places").classList.toggle("on",["cities","city"].includes(view));
+  document.querySelector("#tab-trips").classList.toggle("on",["trips","trip"].includes(view));
+  render();
+  window.scrollTo(0,0);
+}
+function render(){
+  const m=$("#main");
+  let h="";
+  if(S.view==="cities")h=vCities();
+  else if(S.view==="city")h=vCity();
+  else if(S.view==="trips")h=vTrips();
+  else if(S.view==="trip")h=vTrip();
+  m.innerHTML=`<div class="view">${h}</div>`;
+}
+</script>
+<script>
+/* ============ VIEW: cities ============ */
+function vCities(){
+  const rows=D.cities.map(c=>{
+    const n=D.places.filter(p=>p.cityId===c.id).length;
+    return `<button class="city-item" onclick="go('city','${c.id}')">
+      <h3>${esc(c.name)}</h3>
+      <span class="cnt">${n} PLACES</span><span class="arw">→</span>
+    </button>`;
+  }).join("");
+  const empty=D.cities.length===0?`<div class="empty"><div class="mark">旅</div><p>まずは旅する都市を登録しましょう。<br>ハワイ、バンコク、パリ——どこへ行く?</p></div>`:"";
+  return `<div class="eyebrow">Destinations</div><h1 class="page">旅の目的地</h1>
+    ${rows}
+    <button class="addline" onclick="mAddCity()"><span class="pl">＋</span>ADD CITY ／ 都市を追加</button>
+    ${empty}`;
+}
+function mAddCity(){
+  sheet(`<div class="sheet-head"><h3>都市を追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <div class="field"><label>CITY NAME ／ 都市の名前</label><input type="text" id="f-city" placeholder="例: ハワイ / バンコク / 京都"></div>
+    <button class="btn accent wfull" onclick="addCity()">この都市のページをつくる</button>`);
+  $("#f-city").focus();
+}
+async function addCity(){
+  const name=$("#f-city").value.trim();
+  if(!name)return toast("都市名を入力してください");
+  D.cities.push({id:uid(),name});
+  closeSheet();render();await save();toast("「"+name+"」のページができました");
+}
+
+/* ============ VIEW: city ============ */
+function vCity(){
+  const c=city(S.cityId);if(!c)return vCities();
+  let list=D.places.filter(p=>p.cityId===c.id);
+  if(S.filter!=="all")list=list.filter(p=>p.genre===S.filter);
+  if(S.near&&S.userPos){
+    list=list.slice().sort((a,b)=>{
+      const da=a.lat!=null?haversine(S.userPos,a):1e9;
+      const db=b.lat!=null?haversine(S.userPos,b):1e9;
+      return da-db;
+    });
+  }
+  const chips=['all',...allGenres()].map(g=>
+    `<button class="chip ${S.filter===g?'on':''}" onclick="S.filter='${g}';render()">${g==='all'?'ALL':g}</button>`).join("");
+  const cards=list.map(p=>{
+    const dist=(S.near&&S.userPos&&p.lat!=null)?`<span class="dist-chip">${fmtKm(haversine(S.userPos,p))}</span>`:"";
+    return `<div class="place-card">
+      <div class="pc-top">
+        <span class="gtag" style="--gc:${genreColor(p.genre)}"><span class="gd"></span>${esc(p.genre)}</span>
+        ${dist}
+      </div>
+      <h4>${esc(p.name)}</h4>
+      ${p.summary?`<p class="summary">${esc(p.summary)}</p>`:""}
+      <div class="pc-foot">
+        <a href="${esc(mapLink(p))}" target="_blank" rel="noopener">MAP ↗</a>
+        <button class="xbtn" onclick="delPlace('${p.id}')" aria-label="削除">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+  const empty=list.length===0?`<div class="empty"><div class="mark">地</div><p>気になる場所を集めていきましょう。<br>Google Mapのリストからの一括登録もできます。</p></div>`:"";
+  const nearNote=S.near?`<div class="near-note">SORTED BY DISTANCE — 現在地から近い順</div>`:"";
+  return `<button class="back" onclick="go('cities')">← INDEX</button>
+    <div class="eyebrow">City Guide</div>
+    <h1 class="page">${esc(c.name)}</h1>
+    <div class="toolbar">
+      <button class="btn accent" onclick="mAddPlace()">＋ 行き先を追加</button>
+      <button class="btn ghost" onclick="toggleNear()">${S.near?"並びを戻す":"近い順に並べる"}</button>
+    </div>
+    <div class="chips">${chips}</div>
+    ${nearNote}${cards}${empty}`;
+}
+async function delPlace(id){
+  if(!confirm("この行き先を削除しますか?"))return;
+  D.places=D.places.filter(p=>p.id!==id);
+  render();await save();
+}
+function toggleNear(){
+  if(S.near){S.near=false;render();return;}
+  if(!navigator.geolocation)return toast("この端末では位置情報を利用できません");
+  toast("現在地を取得中…");
+  navigator.geolocation.getCurrentPosition(pos=>{
+    S.userPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    S.near=true;render();
+  },()=>toast("位置情報を取得できませんでした"),{enableHighAccuracy:true,timeout:10000});
+}
+
+/* ============ add place: single AI / bulk / manual ============ */
+let aiDraft=null;
+function mAddPlace(){
+  aiDraft=null;
+  sheet(`<div class="sheet-head"><h3>行き先を追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <div class="seg">
+      <button id="seg-ai" class="on" onclick="segPlace('ai')">1件ずつ</button>
+      <button id="seg-bulk" onclick="segPlace('bulk')">リスト一括</button>
+      <button id="seg-manual" onclick="segPlace('manual')">手入力</button>
+    </div>
+    <div id="pane-ai">
+      <div class="field"><label>PLACE ／ 場所の名前 or Google MapのURL</label>
+        <textarea id="f-q" placeholder="例: マリウカイ マーケット&#10;例: https://www.google.com/maps/place/…" oninput="qHint()"></textarea>
+        <div class="hint" id="q-hint">名前かリンクだけで、ジャンルと紹介文をAIがまとめます。</div>
+      </div>
+      <div class="field" id="q-name-wrap" style="display:none"><label>NAME ／ 場所の名前(URLと一緒に入れると精度UP)</label>
+        <input type="text" id="f-qname" placeholder="例: Leonard's Bakery"></div>
+      <button class="btn wfull" id="ai-go" onclick="aiLookup()">調べてまとめる</button>
+      <div id="ai-out"></div>
+    </div>
+    <div id="pane-bulk" style="display:none">
+      <div class="field"><label>PLACES ／ 場所の名前を1行ずつ貼り付け</label>
+        <textarea id="f-bulk" style="min-height:130px" placeholder="レナーズ ベーカリー&#10;ダイヤモンドヘッド&#10;アラモアナセンター&#10;Waikiki Beach&#10;…" oninput="bulkHint()"></textarea>
+        <div class="hint" id="bulk-hint">Google Mapの保存リストを開いて場所名をコピーし、ここに貼り付けてください。まとめてAIが調査し、ジャンル・紹介文付きで一括登録します。</div>
+      </div>
+      <button class="btn wfull" id="bulk-go" onclick="bulkLookup()">まとめて調べる</button>
+      <div id="bulk-out"></div>
+    </div>
+    <div id="pane-manual" style="display:none">
+      ${placeForm({},"m-")}
+      <button class="btn accent wfull" onclick="submitManual()">この行き先を登録</button>
+    </div>`);
+}
+function segPlace(k){
+  ["ai","bulk","manual"].forEach(x=>{
+    $("#seg-"+x).classList.toggle("on",x===k);
+    $("#pane-"+x).style.display=x===k?"":"none";
+  });
+}
+function placeForm(v,px){
+  px=px||"";
+  return `
+    <div class="field"><label>TITLE ／ 場所の名前</label><input type="text" id="${px}f-name" value="${esc(v.name||"")}"></div>
+    <div class="field"><label>GENRE ／ ジャンル</label><select id="${px}f-genre" data-prev="${esc(v.genre||GENRES[0])}" onchange="genreSel(this)">${genreOptions(v.genre)}</select></div>
+    <div class="field"><label>SUMMARY ／ 説明の要約</label><textarea id="${px}f-summary">${esc(v.summary||"")}</textarea></div>
+    <div class="field"><label>GOOGLE MAP URL(任意)</label><input type="text" id="${px}f-url" value="${esc(v.mapUrl||"")}"></div>`;
+}
+function qHint(){
+  const q=$("#f-q").value.trim();
+  const isUrl=/^https?:\/\//.test(q);
+  $("#q-name-wrap").style.display=isUrl?"":"none";
+  const h=$("#q-hint");
+  if(isShortMapUrl(q)){
+    h.innerHTML="⚠️ <b>短縮URLには場所の情報が含まれていません。</b>下の欄に場所の名前も入力してください。";
+    h.style.color="var(--g-food)";
+  }else{
+    h.textContent="名前かリンクだけで、ジャンルと紹介文をAIがまとめます。";
+    h.style.color="";
+  }
+}
+async function aiLookup(){
+  const q=$("#f-q").value.trim();
+  const extra=($("#f-qname")?$("#f-qname").value.trim():"");
+  if(!q)return toast("場所の名前かURLを入力してください");
+  const isUrl=/^https?:\/\//.test(q);
+  const coords=coordsFromUrl(q);
+  const hintName=nameFromUrl(q);
+  if(isUrl&&isShortMapUrl(q)&&!extra&&!hintName){
+    qHint();toast("短縮URLのため、場所の名前も入力してください");
+    $("#f-qname").focus();return;
+  }
+  const btn=$("#ai-go");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> 調べています…`;
+  $("#ai-out").innerHTML="";
+  const c=city(S.cityId);
+  const clue=[extra||null,hintName?("URLから読み取れた名前: "+hintName):null,
+    coords?("URLから読み取れた座標: "+coords.lat+","+coords.lng):null,
+    isUrl?null:q].filter(Boolean).join(" / ")||q;
+  try{
+    const prompt=`あなたは旅行ガイドブックの編集者です。次の場所についてウェブ検索で調べて、指定のJSONだけで回答してください。
+場所の手がかり: ${clue}
+訪問予定の都市: ${c?c.name:"不明"}
+注意: URLそのものを開くことはできないため、名前や座標を手がかりに検索すること。
+
+出力フォーマット(JSON以外の文字・前置き・コードブロック記号は一切出力しない):
+{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"その場所の紹介文を日本語で100字程度。何が魅力か・何ができるかを具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}`;
+    const text=await askClaude(prompt,true);
+    const j=pickJSON(text);
+    aiDraft={
+      name:j.name||extra||hintName||q,
+      genre:allGenres().includes(j.genre)?j.genre:"観光",
+      summary:j.summary||"",
+      lat:coords?coords.lat:(typeof j.lat==="number"?j.lat:null),
+      lng:coords?coords.lng:(typeof j.lng==="number"?j.lng:null),
+      mapUrl:isUrl?q:""
+    };
+    $("#ai-out").innerHTML=`<div class="ai-result"><div class="lbl">FOUND — 内容を確認して登録</div>
+      ${placeForm(aiDraft)}
+      <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
+  }catch(err){
+    const fallbackName=extra||hintName;
+    aiDraft={name:fallbackName||"",genre:"観光",summary:"",
+      lat:coords?coords.lat:null,lng:coords?coords.lng:null,mapUrl:isUrl?q:""};
+    $("#ai-out").innerHTML=`<div class="ai-result"><div class="lbl err">NOT FOUND — うまく調べられませんでした</div>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">理由: ${esc(err.message||"不明")}<br>下のフォームを埋めれば、このまま登録できます。</p>
+      ${placeForm(aiDraft)}
+      <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
+  }
+  btn.disabled=false;btn.textContent="調べてまとめる";
+}
+async function submitAI(){
+  const p=readPlaceForm("");
+  if(!p.name)return toast("名前を入力してください");
+  p.lat=aiDraft?aiDraft.lat:null;p.lng=aiDraft?aiDraft.lng:null;
+  await pushPlace(p);
+}
+async function submitManual(){
+  const p=readPlaceForm("m-");
+  if(!p.name)return toast("名前を入力してください");
+  const c=p.mapUrl?coordsFromUrl(p.mapUrl):null;
+  if(c){p.lat=c.lat;p.lng=c.lng;}
+  await pushPlace(p);
+}
+function readPlaceForm(px){
+  px=px||"";
+  return{name:$("#"+px+"f-name").value.trim(),genre:$("#"+px+"f-genre").value,
+    summary:$("#"+px+"f-summary").value.trim(),mapUrl:$("#"+px+"f-url").value.trim(),lat:null,lng:null};
+}
+async function pushPlace(p){
+  D.places.push({id:uid(),cityId:S.cityId,...p});
+  closeSheet();render();await save();toast("「"+p.name+"」を追加しました");
+}
+
+/* ---- bulk import ---- */
+let bulkResults=[];
+function bulkHint(){
+  const v=$("#f-bulk").value;
+  const h=$("#bulk-hint");
+  if(isShortMapUrl(v)){
+    h.innerHTML=`⚠️ <b>リストの共有URL(maps.app.goo.gl)から中身を読み取ることはできません。</b><br>
+      かわりに: Google Mapでリストを開く → 各場所の名前をコピー → ここに1行ずつ貼り付け、で一括登録できます。`;
+    h.style.color="var(--g-food)";
+  }else{
+    const n=parseBulkLines(v).length;
+    h.textContent=n?`${n}件の場所を読み取りました。「まとめて調べる」でAIが一括調査します。`:"Google Mapの保存リストを開いて場所名をコピーし、ここに貼り付けてください。まとめてAIが調査し、ジャンル・紹介文付きで一括登録します。";
+    h.style.color=n?"var(--accent)":"";
+  }
+}
+function parseBulkLines(v){
+  const seen=new Set();
+  return v.split(/\n+/)
+    .map(l=>l.replace(/^[\s・•\-–—\d.．)）]+/,"").trim())
+    .filter(l=>l&&!/^https?:\/\//.test(l)&&l.length<=60)
+    .filter(l=>{const k=l.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;})
+    .slice(0,40);
+}
+async function bulkLookup(){
+  const raw=$("#f-bulk").value;
+  if(isShortMapUrl(raw)&&parseBulkLines(raw).length===0){bulkHint();return toast("URLではなく場所名を貼り付けてください");}
+  const names=parseBulkLines(raw);
+  if(!names.length)return toast("場所名を1行ずつ入力してください");
+  const btn=$("#bulk-go");btn.disabled=true;
+  const c=city(S.cityId);
+  const CHUNK=5;
+  const chunks=[];
+  for(let i=0;i<names.length;i+=CHUNK)chunks.push(names.slice(i,i+CHUNK));
+  bulkResults=[];
+  $("#bulk-out").innerHTML=`<div class="prog"><div class="prog-bar"><i id="pg-bar" style="width:2%"></i></div>
+    <div class="prog-txt" id="pg-txt">RESEARCHING 0 / ${names.length}</div></div><div id="bulk-list"></div>`;
+  let done=0;
+  for(const chunk of chunks){
+    try{
+      const prompt=`あなたは旅行ガイドブックの編集者です。以下の${chunk.length}件の場所についてウェブ検索で調べて、指定のJSON配列だけで回答してください。
+訪問予定の都市: ${c?c.name:"不明"}
+場所リスト:
+${chunk.map((n,i)=>(i+1)+". "+n).join("\n")}
+
+出力フォーマット(JSON配列以外の文字・前置き・コードブロック記号は一切出力しない。必ず${chunk.length}件、入力と同じ順序で):
+[{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"紹介文を日本語で80字程度。何が魅力か具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}]`;
+      const text=await askClaude(prompt,true,4000);
+      const arr=pickJSONArr(text);
+      chunk.forEach((nm,i)=>{
+        const j=arr[i]||{};
+        bulkResults.push({ok:true,input:nm,
+          name:j.name||nm,genre:allGenres().includes(j.genre)?j.genre:"観光",
+          summary:j.summary||"",lat:typeof j.lat==="number"?j.lat:null,lng:typeof j.lng==="number"?j.lng:null});
+      });
+    }catch(e){
+      chunk.forEach(nm=>bulkResults.push({ok:false,input:nm,name:nm,genre:"観光",summary:"",lat:null,lng:null}));
+    }
+    done+=chunk.length;
+    const bar=$("#pg-bar"),txt=$("#pg-txt");
+    if(bar)bar.style.width=Math.round(done/names.length*100)+"%";
+    if(txt)txt.textContent=`RESEARCHING ${done} / ${names.length}`;
+    renderBulkList();
+  }
+  const txt=$("#pg-txt");if(txt)txt.textContent=`DONE — ${bulkResults.length}件の調査が完了`;
+  const listEl=$("#bulk-out");
+  if(listEl)listEl.insertAdjacentHTML("beforeend",
+    `<button class="btn accent wfull" style="margin-top:10px" onclick="applyBulk()">チェックした場所をまとめて登録</button>`);
+  btn.disabled=false;
+}
+function renderBulkList(){
+  const el=$("#bulk-list");if(!el)return;
+  el.innerHTML=bulkResults.map((r,i)=>`
+    <label class="bulk-item ${r.ok?"":"fail"}">
+      <input type="checkbox" data-bi="${i}" ${r.ok?"checked":""}>
+      <span class="bi">
+        <span class="n">${esc(r.name)}</span>
+        ${r.summary?`<div class="s">${esc(r.summary)}</div>`:`<div class="s">情報が見つかりませんでした(名前のみで登録できます)</div>`}
+        <div class="g">${esc(r.genre)}</div>
+      </span>
+    </label>`).join("");
+}
+async function applyBulk(){
+  const checked=[...document.querySelectorAll("[data-bi]:checked")].map(ch=>bulkResults[+ch.dataset.bi]);
+  if(!checked.length)return toast("登録する場所を選んでください");
+  checked.forEach(r=>{
+    D.places.push({id:uid(),cityId:S.cityId,name:r.name,genre:r.genre,summary:r.summary,lat:r.lat,lng:r.lng,mapUrl:""});
+  });
+  closeSheet();render();await save();
+  toast(checked.length+"件の行き先を一括登録しました");
+}
+
+/* ============ VIEW: trips ============ */
+function vTrips(){
+  const cards=D.trips.map(t=>{
+    const s=new Date(t.start+"T00:00:00"),e=new Date(t.end+"T00:00:00");
+    const fl=(t.flights||[]).map(f=>f.flightNo).join(" / ");
+    return `<button class="trip-card" onclick="go('trip','${t.id}')">
+      <div class="trip-stub">
+        <span class="mo">${String(s.getMonth()+1).padStart(2,"0")}月</span><span class="dd">${s.getDate()}</span>
+        <span class="dv">|</span>
+        <span class="mo">${String(e.getMonth()+1).padStart(2,"0")}月</span><span class="dd">${e.getDate()}</span>
+      </div>
+      <div class="trip-body">
+        <h3>${esc(t.name)}</h3>
+        <div class="meta">${fmtD(t.start)} — ${fmtD(t.end)} ・ ${daysBetween(t.start,t.end).length} DAYS</div>
+        ${fl?`<div class="fmini">✈ ${esc(fl)}</div>`:""}
+      </div>
+    </button>`;
+  }).join("");
+  const empty=D.trips.length===0?`<div class="empty"><div class="mark">程</div><p>新しい旅の計画をはじめましょう。<br>日付を決めれば、しおり作りのスタートです。</p></div>`:"";
+  return `<div class="eyebrow">Itineraries</div><h1 class="page">旅程</h1>
+    <button class="btn accent wfull" style="margin-bottom:20px" onclick="mAddTrip()">＋ 新しい旅をつくる</button>
+    ${cards}${empty}`;
+}
+function mAddTrip(){
+  const today=ymd(new Date());
+  sheet(`<div class="sheet-head"><h3>新しい旅</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <div class="field"><label>TRIP NAME ／ 旅の名前</label><input type="text" id="f-tname" placeholder="例: ハワイ卒業旅行 2026"></div>
+    <div class="row2">
+      <div class="field"><label>FROM ／ 出発日</label><input type="date" id="f-ts" value="${today}"></div>
+      <div class="field"><label>TO ／ 帰着日</label><input type="date" id="f-te" value="${today}"></div>
+    </div>
+    <button class="btn accent wfull" onclick="addTrip()">旅をつくる</button>`);
+}
+async function addTrip(){
+  const name=$("#f-tname").value.trim(),s=$("#f-ts").value,e=$("#f-te").value;
+  if(!name)return toast("旅の名前を入力してください");
+  if(!s||!e||s>e)return toast("日付を確認してください");
+  const t={id:uid(),name,start:s,end:e,flights:[],days:{}};
+  D.trips.push(t);
+  closeSheet();go("trip",t.id);await save();toast("旅のしおり作りをはじめましょう");
+}
+
+/* ============ VIEW: trip detail ============ */
+function vTrip(){
+  const t=trip(S.tripId);if(!t)return vTrips();
+  const days=daysBetween(t.start,t.end);
+  if(!S.dayKey||!days.includes(S.dayKey))S.dayKey=days[0];
+  const flights=(t.flights||[]).map(f=>`
+    <div class="flight-card">
+      <span class="fno">${esc(f.flightNo)}</span>
+      <div class="route">
+        <span class="t">${esc(f.depTime||"--:--")}</span> ${esc(f.depAirport||"???")}
+        → <span class="t">${esc(f.arrTime||"--:--")}</span> ${esc(f.arrAirport||"???")}
+        <div class="fdate">${fmtD(f.date)}</div>
+      </div>
+      <button class="xbtn" onclick="delFlight('${f.id}')" aria-label="削除">✕</button>
+    </div>`).join("");
+  const chips=days.map((d,i)=>{
+    const dt=new Date(d+"T00:00:00");
+    return `<button class="day-chip ${S.dayKey===d?'on':''}" onclick="S.dayKey='${d}';render()">
+      <span class="dw">DAY ${String(i+1).padStart(2,"0")}</span><span class="dd">${dt.getMonth()+1}/${dt.getDate()}</span>
+    </button>`;
+  }).join("");
+  return `<button class="back" onclick="go('trips')">← ITINERARIES</button>
+    <div class="hero">
+      <div class="eyebrow">Boarding&nbsp;/&nbsp;Itinerary</div>
+      <h2>${esc(t.name)}</h2>
+      <div class="dates">${fmtD(t.start)} — ${fmtD(t.end)} ・ ${days.length} DAYS</div>
+      <button class="xbtn" onclick="delTrip('${t.id}')" aria-label="旅を削除">✕</button>
+    </div>
+    <div class="eyebrow">Flights</div>
+    ${flights||`<p style="font-size:13px;color:var(--sub);margin-bottom:12px">便名を登録すると、出発・到着時刻がしおりに反映されます。</p>`}
+    <button class="btn ghost small" style="margin-bottom:26px" onclick="mAddFlight()">＋ 便を追加</button>
+    <div class="eyebrow">Day Plan</div>
+    <div class="day-chips">${chips}</div>
+    ${vDay(t)}
+    <div style="margin-top:28px">
+      <button class="btn wfull" onclick="mShiori()">旅のしおりを見る・シェア</button>
+    </div>`;
+}
+async function delTrip(id){
+  if(!confirm("この旅を削除しますか?"))return;
+  D.trips=D.trips.filter(t=>t.id!==id);
+  go("trips");await save();
+}
+function dayObj(t,key){
+  if(!t.days[key])t.days[key]={startTime:"09:00",items:[]};
+  return t.days[key];
+}
+function vDay(t){
+  const d=dayObj(t,S.dayKey);
+  const dayFlights=(t.flights||[]).filter(f=>f.date===S.dayKey);
+  let cur=d.startTime||"09:00";
+  const rows=[];
+  dayFlights.forEach(f=>{
+    rows.push(`<div class="tl-item">
+      <div class="tl-time">${esc(f.depTime||"")}<div class="end">${esc(f.arrTime||"")} 着</div></div>
+      <div class="tl-node" style="--dotc:var(--ink)"></div>
+      <div class="tl-flight"><div class="nm">✈ ${esc(f.flightNo)}</div>
+        <div class="gsm">${esc(f.depAirport||"?")} ${esc(f.depTime||"")} → ${esc(f.arrAirport||"?")} ${esc(f.arrTime||"")}</div></div>
+    </div>`);
+  });
+  d.items.forEach((it,i)=>{
+    const p=place(it.placeId);
+    if(i>0){
+      const tv=it.tMin;
+      cur=addMin(cur,tv||0);
+      const srcLbl=it.tSrc==="ai"?"AI":it.tSrc==="est"?"EST":it.tSrc==="manual"?"FIX":"";
+      rows.push(`<div class="tl-item travel">
+        <div class="tl-time"></div>
+        <div class="tl-node"></div>
+        <div class="travel-pill"><span class="car">🚗</span>DRIVE
+          <input type="number" min="0" step="5" value="${tv!=null?tv:""}" placeholder="--" onchange="setTravel(${i},this.value)" aria-label="移動時間(分)">分
+          ${srcLbl?`<span class="src">${srcLbl}</span>`:""}
+        </div>
+      </div>`);
+    }
+    const st=cur,en=addMin(cur,it.duration||60);cur=en;
+    const nm=p?p.name:(it.name||"(削除された行き先)");
+    const gn=p?p.genre:"";
+    rows.push(`<div class="tl-item">
+      <div class="tl-time">${st}<div class="end">— ${en}</div></div>
+      <div class="tl-node" style="--dotc:${p?genreColor(p.genre):'var(--line)'}"></div>
+      <div class="tl-card">
+        <div class="nm">${esc(nm)}</div>
+        ${gn?`<div class="gsm">${esc(gn)}</div>`:""}
+        <div class="tl-ctrl">
+          <input type="number" min="5" step="5" value="${it.duration||60}" onchange="setDur(${i},this.value)" aria-label="所要時間(分)">
+          <span class="u">分</span>
+          <button class="xbtn" onclick="moveItem(${i},-1)" aria-label="上へ">↑</button>
+          <button class="xbtn" onclick="moveItem(${i},1)" aria-label="下へ">↓</button>
+          <button class="xbtn" onclick="rmItem(${i})" aria-label="削除">✕</button>
+        </div>
+      </div>
+    </div>`);
+  });
+  const empty=(rows.length===0)?`<div class="empty" style="padding:30px 10px"><div class="mark">日</div><p>行き先リストから選んで、この日の予定を組みましょう。</p></div>`:"";
+  const busy=S.travelBusy?`<span class="drive-busy"><span class="spinner blue"></span>DRIVE TIME…</span>`:"";
+  return `<div class="dayhead">
+      <span class="start">START
+        <input type="time" value="${d.startTime||"09:00"}" onchange="setStart(this.value)"></span>
+      ${busy}
+      <button class="btn accent small" style="margin-left:auto" onclick="mPickPlaces()">＋ 行き先を追加</button>
+    </div>
+    <div class="tl">${rows.join("")}</div>${empty}`;
+}
+async function setStart(v){dayObj(trip(S.tripId),S.dayKey).startTime=v;render();await save();}
+async function setDur(i,v){dayObj(trip(S.tripId),S.dayKey).items[i].duration=Math.max(5,parseInt(v)||60);render();await save();}
+async function moveItem(i,dir){
+  const day=dayObj(trip(S.tripId),S.dayKey);
+  const j=i+dir;if(j<0||j>=day.items.length)return;
+  [day.items[i],day.items[j]]=[day.items[j],day.items[i]];
+  recalcTravel(day,true);
+  render();await save();autoAiTravel();
+}
+async function rmItem(i){
+  const day=dayObj(trip(S.tripId),S.dayKey);
+  day.items.splice(i,1);
+  recalcTravel(day,true);
+  render();await save();autoAiTravel();
+}
+
+/* ---- flight modal ---- */
+function mAddFlight(){
+  const t=trip(S.tripId);
+  sheet(`<div class="sheet-head"><h3>フライトを追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <div class="row2">
+      <div class="field"><label>FLIGHT NO ／ 便名</label><input type="text" id="f-fno" placeholder="NH182 / HA842" style="font-family:var(--mono);text-transform:uppercase"></div>
+      <div class="field"><label>DATE ／ 搭乗日</label><input type="date" id="f-fd" value="${t.start}" min="${t.start}" max="${t.end}"></div>
+    </div>
+    <button class="btn wfull" id="fl-go" onclick="aiFlight()">AIで時刻を調べる</button>
+    <div class="hint" style="margin:8px 0 16px">見つからない場合や違う場合は、下の欄で直接入力・修正できます。</div>
+    <div class="row2">
+      <div class="field"><label>FROM ／ 出発空港</label><input type="text" id="f-dap" placeholder="HND" style="font-family:var(--mono)"></div>
+      <div class="field"><label>DEP ／ 出発時刻</label><input type="time" id="f-dt"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>TO ／ 到着空港</label><input type="text" id="f-aap" placeholder="HNL" style="font-family:var(--mono)"></div>
+      <div class="field"><label>ARR ／ 到着時刻</label><input type="time" id="f-at"></div>
+    </div>
+    <button class="btn accent wfull" onclick="addFlight()">このフライトを登録</button>`);
+}
+async function aiFlight(){
+  const no=$("#f-fno").value.trim().toUpperCase(),dt=$("#f-fd").value;
+  if(!no)return toast("便名を入力してください");
+  const b=$("#fl-go");b.disabled=true;b.innerHTML=`<span class="spinner"></span> 時刻表を調べています…`;
+  try{
+    const text=await askClaude(`航空便 ${no} (搭乗日: ${dt}) の運航スケジュールをウェブで調べて、JSONだけで回答してください。
+時刻はそれぞれの空港の現地時刻・24時間表記。確実な情報が見つからない場合は found を false に。
+出力(JSON以外は出力しない):
+{"found":true,"depAirport":"空港コード","depTime":"HH:MM","arrAirport":"空港コード","arrTime":"HH:MM"}`,true);
+    const j=pickJSON(text);
+    if(j.found){
+      $("#f-dap").value=j.depAirport||"";$("#f-dt").value=j.depTime||"";
+      $("#f-aap").value=j.arrAirport||"";$("#f-at").value=j.arrTime||"";
+      toast("時刻を反映しました。内容をご確認ください");
+    }else toast("時刻が見つかりませんでした。手入力してください");
+  }catch(e){toast("調査に失敗しました。手入力してください");}
+  b.disabled=false;b.textContent="AIで時刻を調べる";
+}
+async function addFlight(){
+  const no=$("#f-fno").value.trim().toUpperCase();
+  if(!no)return toast("便名を入力してください");
+  const t=trip(S.tripId);
+  t.flights.push({id:uid(),flightNo:no,date:$("#f-fd").value,
+    depAirport:$("#f-dap").value.trim().toUpperCase(),depTime:$("#f-dt").value,
+    arrAirport:$("#f-aap").value.trim().toUpperCase(),arrTime:$("#f-at").value});
+  closeSheet();render();await save();toast("フライトを登録しました");
+}
+async function delFlight(id){
+  const t=trip(S.tripId);
+  t.flights=t.flights.filter(f=>f.id!==id);
+  render();await save();
+}
+
+/* ---- place picker ---- */
+function mPickPlaces(){
+  if(D.places.length===0){toast("先に「行き先」タブで場所を登録してください");return;}
+  const byCity=D.cities.map(c=>{
+    const ps=D.places.filter(p=>p.cityId===c.id);
+    if(!ps.length)return"";
+    return `<div class="eyebrow" style="margin-top:16px">${esc(c.name)}</div>`+ps.map(p=>`
+      <label class="pick-item">
+        <input type="checkbox" value="${p.id}">
+        <span class="pi-body"><span class="n">${esc(p.name)}</span><br><span class="g">${esc(p.genre)}</span></span>
+        <span class="dur"><input type="number" min="5" step="5" value="60" data-dur="${p.id}">分</span>
+      </label>`).join("");
+  }).join("");
+  sheet(`<div class="sheet-head"><h3>${fmtD(S.dayKey)} に追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <p class="hint" style="margin-bottom:8px">行き先を選んで、それぞれの所要時間を入れるだけで旅程ができます。</p>
+    <div id="pick-list">${byCity}</div>
+    <button class="btn accent wfull" style="margin-top:14px" onclick="applyPick()">選んだ場所を旅程に入れる</button>`);
+}
+async function applyPick(){
+  const checks=[...document.querySelectorAll("#pick-list input[type=checkbox]:checked")];
+  if(!checks.length)return toast("行き先を選んでください");
+  const d=dayObj(trip(S.tripId),S.dayKey);
+  checks.forEach(ch=>{
+    const dur=parseInt(document.querySelector(`[data-dur="${ch.value}"]`).value)||60;
+    d.items.push({placeId:ch.value,duration:dur});
+  });
+  recalcTravel(d,false);
+  closeSheet();render();await save();
+  toast(checks.length+"件を追加。車の移動時間を計算します…");
+  autoAiTravel();
+}
+
+/* ============ shiori ============ */
+function buildShioriData(t){
+  const days=daysBetween(t.start,t.end);
+  return days.map(dk=>{
+    const d=t.days[dk]||{startTime:"09:00",items:[]};
+    const lines=[];
+    (t.flights||[]).filter(f=>f.date===dk).forEach(f=>{
+      lines.push({time:(f.depTime||"--:--")+" 発",name:"✈ "+f.flightNo+"  "+(f.depAirport||"?")+" → "+(f.arrAirport||"?")+" ("+(f.arrTime||"--:--")+" 着)",fl:true});
+    });
+    let cur=d.startTime||"09:00";
+    d.items.forEach((it,i)=>{
+      const p=place(it.placeId);
+      if(i>0&&it.tMin){
+        lines.push({time:"",name:"↓ 車で"+it.tMin+"分",tr:true});
+        cur=addMin(cur,it.tMin);
+      }
+      const en=addMin(cur,it.duration||60);
+      lines.push({time:cur+"–"+en,name:(p?p.name:"(未定)")+(p?" ― "+p.genre:"")});
+      cur=en;
+    });
+    return{date:dk,lines};
+  });
+}
+function mShiori(){
+  const t=trip(S.tripId);
+  const data=buildShioriData(t);
+  const html=data.map((d,i)=>`
+    <div class="sday"><h4>DAY ${String(i+1).padStart(2,"0")} — ${fmtD(d.date)}</h4>
+      ${d.lines.length?d.lines.map(l=>`<div class="sline ${l.fl?'fl':''}"${l.tr?' style="opacity:.55;font-size:11.5px"':''}><span class="st">${esc(l.time)}</span><span class="sn"${l.tr?' style="font-family:var(--mono)"':''}>${esc(l.name)}</span></div>`).join(""):`<div class="sline"><span class="st">—</span><span class="sn" style="color:var(--sub)">予定なし(のんびりデー)</span></div>`}
+    </div>`).join("");
+  sheet(`<div class="sheet-head"><h3>旅のしおり</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <div class="shiori">
+      <div class="head"><div class="eyebrow">Travel Itinerary</div>
+        <h2>${esc(t.name)}</h2>
+        <div class="sd">${fmtD(t.start)} — ${fmtD(t.end)}</div></div>
+      <div class="in">${html}</div>
+    </div>
+    <div class="row2">
+      <button class="btn ghost" style="flex:1" onclick="copyShiori()">コピー</button>
+      <button class="btn accent" style="flex:1" onclick="shareShiori()">シェア</button>
+    </div>`);
+}
+function shioriText(){
+  const t=trip(S.tripId);
+  let out="✈ "+t.name+"\n"+fmtD(t.start)+" — "+fmtD(t.end)+"\n";
+  buildShioriData(t).forEach((d,i)=>{
+    out+="\n▼ DAY"+(i+1)+"  "+fmtD(d.date)+"\n";
+    if(!d.lines.length)out+="  (予定なし)\n";
+    d.lines.forEach(l=>{out+="  "+l.time+"  "+l.name+"\n";});
+  });
+  out+="\n— TABI NOTE でつくった旅のしおり";
+  return out;
+}
+async function copyShiori(){
+  try{await navigator.clipboard.writeText(shioriText());toast("しおりをコピーしました");}
+  catch(e){toast("コピーできませんでした");}
+}
+async function shareShiori(){
+  const text=shioriText();
+  if(navigator.share){
+    try{await navigator.share({title:trip(S.tripId).name,text});}catch(e){}
+  }else copyShiori();
+}
+
+/* ============ sheet ============ */
+function sheet(inner){
+  $("#modal-root").innerHTML=`<div class="overlay" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet"><div class="grab"></div>${inner}</div></div>`;
+}
+function closeSheet(){$("#modal-root").innerHTML="";}
+
+load();
+
+</script>
+</body>
+</html>

@@ -371,7 +371,7 @@ h1.page{
 <div class="app">
   <header class="appbar">
     <span class="logo">TABI<b>—</b>NOTE</span>
-    <span class="tagline">MY OWN GUIDEBOOK</span>
+    <button class="tagline" style="font-weight:700;letter-spacing:.24em;border:1px solid var(--line);padding:5px 12px;border-radius:99px" onclick="mData()">DATA ⇅</button>
   </header>
   <main id="main"></main>
 </div>
@@ -524,15 +524,24 @@ async function setTravel(i,v){
   render();await save();
 }
 function coordsFromUrl(u){
-  let m=u.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
-  m=u.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
+  /* data=内に複数の!3d!4dがある場合、最後のペアが実際に選択した場所 */
+  const all=[...u.matchAll(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g)];
+  if(all.length){const m=all[all.length-1];return{lat:+m[1],lng:+m[2]}}
+  let m=u.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
   m=u.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
   return null;
 }
 function nameFromUrl(u){
-  const m=u.match(/\/place\/([^\/@?]+)/);
+  let m=u.match(/\/place\/([^\/@?]+)/)||u.match(/\/maps\/search\/([^\/@?]+)/);
+  if(!m){
+    const m2=u.match(/[?&](?:q|query)=([^&]+)/);
+    if(m2&&!/^-?\d+\.\d+(?:,|%2C)/i.test(m2[1]))m=m2;
+  }
   if(!m)return null;
-  try{return decodeURIComponent(m[1]).replace(/\+/g," ")}catch(e){return m[1].replace(/\+/g," ")}
+  let s=m[1];
+  try{s=decodeURIComponent(s)}catch(e){}
+  s=s.replace(/\+/g," ").trim();
+  return s||null;
 }
 function isShortMapUrl(u){return /(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/.test(u)}
 function mapLink(p){
@@ -748,17 +757,29 @@ async function aiLookup(){
   const c=city(S.cityId);
   const clue=[extra||null,hintName?("URLから読み取れた名前: "+hintName):null,
     coords?("URLから読み取れた座標: "+coords.lat+","+coords.lng):null,
-    isUrl?null:q].filter(Boolean).join(" / ")||q;
+    isUrl?null:q].filter(Boolean).join(" / ")||q.slice(0,300);
+  const fmt=`出力フォーマット(JSON以外の文字・前置き・コードブロック記号は一切出力しない):
+{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"その場所の概要を日本語で120字程度。何の店/スポットか、名物・見どころ・特徴、どんな人におすすめかを具体的に。創業年や受賞歴など事実があれば含める。","lat":緯度の数値または null,"lng":経度の数値または null}`;
   try{
-    const prompt=`あなたは旅行ガイドブックの編集者です。次の場所についてウェブ検索で調べて、指定のJSONだけで回答してください。
+    let j;
+    try{
+      /* 第1段: ウェブ検索あり */
+      const text=await askClaude(`あなたは旅行ガイドブックの編集者です。次の場所についてウェブ検索で調べて、指定のJSONだけで回答してください。
 場所の手がかり: ${clue}
 訪問予定の都市: ${c?c.name:"不明"}
-注意: URLそのものを開くことはできないため、名前や座標を手がかりに検索すること。
+注意: URLそのものを開くことはできないため、名前や座標を手がかりに検索すること。検索がうまくいかない場合も、必ずJSONで回答すること。
 
-出力フォーマット(JSON以外の文字・前置き・コードブロック記号は一切出力しない):
-{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"その場所の紹介文を日本語で100字程度。何が魅力か・何ができるかを具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}`;
-    const text=await askClaude(prompt,true);
-    const j=pickJSON(text);
+${fmt}`,true);
+      j=pickJSON(text);
+    }catch(e1){
+      /* 第2段: 検索なし・知識ベースで再試行 */
+      const text=await askClaude(`あなたは旅行ガイドブックの編集者です。ウェブ検索は使わず、あなたの知識に基づいて次の場所の情報をまとめ、指定のJSONだけで回答してください。確信が持てない項目は無理をせず、summaryは一般的な範囲の説明で構いません。
+場所の手がかり: ${clue}
+訪問予定の都市: ${c?c.name:"不明"}
+
+${fmt}`,false);
+      j=pickJSON(text);
+    }
     aiDraft={
       name:j.name||extra||hintName||q,
       genre:allGenres().includes(j.genre)?j.genre:"観光",
@@ -771,11 +792,15 @@ async function aiLookup(){
       ${placeForm(aiDraft)}
       <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
   }catch(err){
+    let reason=err.message||"不明";
+    if(/fetch|network|load failed/i.test(reason)){
+      reason="AIへの通信ができませんでした。ダウンロードしたHTMLをブラウザで直接開いている場合、AI機能とデータ保存はClaude上のプレビューでのみ動作します";
+    }
     const fallbackName=extra||hintName;
     aiDraft={name:fallbackName||"",genre:"観光",summary:"",
       lat:coords?coords.lat:null,lng:coords?coords.lng:null,mapUrl:isUrl?q:""};
     $("#ai-out").innerHTML=`<div class="ai-result"><div class="lbl err">NOT FOUND — うまく調べられませんでした</div>
-      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">理由: ${esc(err.message||"不明")}<br>下のフォームを埋めれば、このまま登録できます。</p>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">理由: ${esc(reason)}<br>下のフォームを埋めれば、このまま登録できます。</p>
       ${placeForm(aiDraft)}
       <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
   }
@@ -849,7 +874,7 @@ async function bulkLookup(){
 ${chunk.map((n,i)=>(i+1)+". "+n).join("\n")}
 
 出力フォーマット(JSON配列以外の文字・前置き・コードブロック記号は一切出力しない。必ず${chunk.length}件、入力と同じ順序で):
-[{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"紹介文を日本語で80字程度。何が魅力か具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}]`;
+[{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"概要を日本語で100字程度。何の店/スポットか、名物・見どころ・特徴を具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}]`;
       const text=await askClaude(prompt,true,4000);
       const arr=pickJSONArr(text);
       chunk.forEach((nm,i)=>{
@@ -1204,6 +1229,158 @@ async function shareShiori(){
   if(navigator.share){
     try{await navigator.share({title:trip(S.tripId).name,text});}catch(e){}
   }else copyShiori();
+}
+
+/* ============ data: backup / export / notion ============ */
+function dl(filename,content,mime){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function mData(){
+  const n=D.places.length,t=D.trips.length;
+  sheet(`<div class="sheet-head"><h3>データの保存・連携</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
+    <p class="hint" style="margin-bottom:18px">現在のデータ: 都市 ${D.cities.length} ／ 行き先 ${n} ／ 旅程 ${t}。データは通常このアプリ内に自動保存されていますが、ここから手元へのバックアップやNotionへの連携ができます。</p>
+
+    <div class="eyebrow">Backup ／ 手元に保存</div>
+    <div class="row2" style="margin-bottom:6px">
+      <button class="btn ghost" style="flex:1" onclick="exportJSON()">JSON書き出し</button>
+      <button class="btn ghost" style="flex:1" onclick="$('#imp-file').click()">JSON読み込み</button>
+    </div>
+    <input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+    <p class="hint" style="margin-bottom:22px">全データを1ファイルに書き出し/復元します。旅の前のバックアップにおすすめ。</p>
+
+    <div class="eyebrow">Notion ／ 旅行プランを書き出す</div>
+    <p class="hint" style="margin-bottom:12px">旅先ごとにページを作成し、その中に「リスト」(行き先DB)と「旅程」(旅ごとのスケジュールDB)を作って書き出します。2回目以降は同名をスキップするので、追加分だけ反映されます。</p>
+    <div class="field"><label>書き出し先の親ページURL(空欄なら「TABI NOTE」ページを自動作成)</label>
+      <input type="text" id="f-notion-parent" value="${esc(D.notionParent||"")}" placeholder="https://www.notion.so/…"></div>
+    <button class="btn accent wfull" id="notion-go" onclick="notionExport()">Notionに書き出す</button>
+    <p class="hint" style="margin-top:8px">※表示形式(「リスト」=ギャラリー/「旅程」=リスト)は自動設定を試みます。反映されていない場合のみ、Notion側でビューを切り替えてください。</p>
+    <div id="notion-out"></div>
+    <hr class="rule" style="margin:20px 0">
+    <button class="btn ghost wfull" style="margin-bottom:6px" onclick="exportCSV()">行き先リストをCSV書き出し(予備)</button>
+    <p class="hint">Notionのデータベース「…」→「インポート」で手動で取り込む場合はこちら。</p>`);
+}
+function exportJSON(){
+  dl("tabinote-backup-"+ymd(new Date())+".json",JSON.stringify(D,null,2),"application/json");
+  toast("バックアップを書き出しました");
+}
+async function importJSON(inp){
+  const f=inp.files[0];if(!f)return;
+  try{
+    const txt=await f.text();
+    const j=JSON.parse(txt);
+    if(!j.cities||!j.places||!j.trips)throw new Error("形式が違います");
+    if(!confirm("現在のデータをこのバックアップで置き換えます。よろしいですか?"))return;
+    D=j;if(!D.customGenres)D.customGenres=[];
+    migrateDays();
+    closeSheet();render();await save();toast("バックアップを復元しました");
+  }catch(e){toast("読み込めませんでした: "+(e.message||"不正なファイル"));}
+  inp.value="";
+}
+function csvEsc(v){v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function exportCSV(){
+  const rows=[["都市","タイトル","ジャンル","説明","MapURL","緯度","経度"]];
+  D.places.forEach(p=>{
+    const c=city(p.cityId);
+    rows.push([c?c.name:"",p.name,p.genre,p.summary||"",mapLink(p),p.lat??"",p.lng??""]);
+  });
+  const csv="\uFEFF"+rows.map(r=>r.map(csvEsc).join(",")).join("\n");
+  dl("tabinote-places-"+ymd(new Date())+".csv",csv,"text/csv");
+  toast("CSVを書き出しました。Notionのインポートで取り込めます");
+}
+function tripCityId(t){
+  const counts={};
+  Object.values(t.days||{}).forEach(d=>(d.items||[]).forEach(it=>{
+    const p=place(it.placeId);if(p&&p.cityId)counts[p.cityId]=(counts[p.cityId]||0)+1;
+  }));
+  let best=null,bn=0;
+  Object.entries(counts).forEach(([k,v])=>{if(v>bn){bn=v;best=k}});
+  return best||(D.cities[0]?D.cities[0].id:null);
+}
+function tripMarkdown(t){
+  let out="期間: "+fmtD(t.start)+" — "+fmtD(t.end)+"\n";
+  (t.flights||[]).forEach(f=>{
+    out+="✈ "+f.flightNo+"  "+fmtD(f.date)+"  "+(f.depAirport||"?")+" "+(f.depTime||"--:--")+" → "+(f.arrAirport||"?")+" "+(f.arrTime||"--:--")+"\n";
+  });
+  buildShioriData(t).forEach((d,i)=>{
+    out+="\n## DAY "+String(i+1).padStart(2,"0")+" — "+fmtD(d.date)+"\n";
+    if(!d.lines.length){out+="- 予定なし\n";return;}
+    d.lines.forEach(l=>{out+="- "+(l.time?l.time+"  ":"")+l.name+"\n";});
+  });
+  return out;
+}
+async function notionCall(prompt){
+  const body={model:"claude-sonnet-4-6",max_tokens:8000,
+    messages:[{role:"user",content:prompt}],
+    mcp_servers:[{type:"url",url:"https://mcp.notion.com/mcp",name:"notion"}]};
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message||"API error");
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+  if(!text)throw new Error("応答がありませんでした");
+  return text;
+}
+async function notionExport(){
+  let parent=$("#f-notion-parent").value.trim();
+  const btn=$("#notion-go");
+  const targets=D.cities.map(c=>{
+    const places=D.places.filter(p=>p.cityId===c.id).map(p=>({
+      名前:p.name,ジャンル:p.genre,説明:p.summary||"",MAP:mapLink(p)}));
+    const trips=D.trips.filter(t=>tripCityId(t)===c.id).map(t=>({
+      名前:t.name,開始日:t.start,終了日:t.end,body:tripMarkdown(t)}));
+    return{city:c.name,places,trips};
+  }).filter(x=>x.places.length||x.trips.length);
+  if(!targets.length)return toast("書き出すデータがありません");
+  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> 書き出し中…`;
+  const steps=targets.length+(parent?0:1);let done=0;
+  $("#notion-out").innerHTML=`<div class="prog"><div class="prog-bar"><i id="np-bar" style="width:3%"></i></div>
+    <div class="prog-txt" id="np-txt">STARTING…</div></div><div id="np-log"></div>`;
+  const log=(cls,msg)=>{const el=$("#np-log");if(el)el.insertAdjacentHTML("beforeend",
+    `<div class="ai-result" style="margin:10px 0;padding:12px 14px"><div class="lbl ${cls}">${cls==="err"?"FAILED":"DONE"}</div><p style="font-size:12.5px;white-space:pre-wrap">${esc(msg)}</p></div>`);};
+  const tick=(label)=>{done++;const b=$("#np-bar"),t=$("#np-txt");
+    if(b)b.style.width=Math.round(done/steps*100)+"%";
+    if(t)t.textContent=label;};
+  try{
+    if(!parent){
+      const t=$("#np-txt");if(t)t.textContent="親ページ「TABI NOTE」を準備中…";
+      const txt=await notionCall(`Notionのツールを使って作業してください。
+「TABI NOTE」という名前のページをまず検索し、あればそのページを使う。なければプライベートページとして新規作成する。
+最後にそのページのURLだけを、次のJSON形式で出力(JSON以外は一切出力しない): {"url":"https://…"}`);
+      parent=pickJSON(txt).url;
+      D.notionParent=parent;const inp=$("#f-notion-parent");if(inp)inp.value=parent;
+      await save();
+      tick("親ページ OK");
+    }
+    for(const tg of targets){
+      const t=$("#np-txt");if(t)t.textContent=`「${tg.city}」を書き出し中…(${done}/${steps})`;
+      try{
+        const report=await notionCall(`Notionのツールを使って、次の作業を上から順にすべて実行してください。途中で確認を求めず最後まで実行すること。
+親ページ: ${parent}
+
+1. 親ページの中に「${tg.city}」というタイトルの子ページを検索し、なければ作成する。
+2. 「${tg.city}」ページの中にデータベース「リスト」を検索し、なければインラインで作成する。プロパティは「名前」(タイトル)、「ジャンル」(セレクト)、「説明」(リッチテキスト)、「MAP」(URL)。ビューを作成・変更できるツールがあれば、既定ビューまたは新規ビューをギャラリー表示に設定する(できなければそのままでよい)。
+3. 「リスト」に以下の行き先を1件ずつページとして追加する。同じ名前のページが既にある場合はその行き先をスキップ。
+${JSON.stringify(tg.places)}
+4. 「${tg.city}」ページの中にデータベース「旅程」を検索し、なければインラインで作成する。プロパティは「名前」(タイトル)、「期間」(日付。開始日〜終了日)。ビューを作成・変更できるツールがあれば、既定ビューまたは新規ビューをリスト表示に設定する(できなければそのままでよい)。
+5. 「旅程」に以下の旅を1件ずつページとして追加する。「期間」には開始日と終了日を設定し、ページ本文には body のマークダウンを見出し・箇条書きとして書き込む。同名のページが既にある場合はスキップ。
+${JSON.stringify(tg.trips)}
+6. 最後に結果を日本語で簡潔に報告する: 行き先の追加/スキップ件数、旅程の追加/スキップ件数。`);
+        log("","「"+tg.city+"」\n"+report);
+      }catch(e){
+        log("err","「"+tg.city+"」: "+(e.message||"失敗"));
+      }
+      tick(`「${tg.city}」完了 (${done}/${steps})`);
+    }
+    const t2=$("#np-txt");if(t2)t2.textContent="ALL DONE — 書き出しが完了しました";
+    toast("Notionへの書き出しが完了しました");
+  }catch(e){
+    const t2=$("#np-txt");if(t2)t2.textContent="STOPPED";
+    log("err",(e.message||"失敗")+"\n\nNotionコネクタの接続(設定→コネクタ)と、対象ページへのアクセス許可をご確認ください。");
+  }
+  btn.disabled=false;btn.textContent="Notionに書き出す";
 }
 
 /* ============ sheet ============ */

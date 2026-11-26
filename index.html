@@ -1,1397 +1,839 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>TABI NOTE — 自分だけの旅ガイド</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Aloha Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
-:root{
-  --bg:#F5F5F2;
-  --card:#FFFFFF;
-  --ink:#15171C;
-  --sub:#71747C;
-  --line:#E6E6E1;
-  --line-soft:#EEEEEA;
-  --accent:#2B4BF2;
-  --accent-soft:#E9EDFE;
-  --g-food:#CE4B32;
-  --g-sight:#2B4BF2;
-  --g-shop:#A87E1F;
-  --g-grocery:#38845B;
-  --g-event:#7757C9;
-  --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho",Georgia,serif;
-  --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
-  --mono:ui-monospace,"SF Mono","Menlo","Courier New",monospace;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{background:var(--bg)}
-body{
-  font-family:var(--sans);background:var(--bg);color:var(--ink);
-  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;
-}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
-a{color:var(--accent)}
-::selection{background:var(--accent);color:#fff}
+/* VOICE: 上質な旅行アプリ。静かで、余白が多く、迷わない。英語の見出し＋日本語の補足。
+   IDEA: ワイキキの夕暮れのカバーと搭乗券。旅を一枚ずつためていく。
+   PICTURE: 角丸カバーの中に夕焼け・ダイヤモンドヘッド・ラグーン・ヤシ（夜テーマは月と星）。
+   COLOUR and TYPE: 生成りの地・白い面・墨色の文字。ラグーンのターコイズは移動、コーラルは予定の時刻だけ。Plus Jakarta Sans＋Zen Kaku Gothic New。
+   LAYOUT: スマホは下のタブバー、日付は上に固定、スポットは下からせり上がるシート。PCは左に1日、右にスポット。 */
+:root{color-scheme:light dark;
+--bg:light-dark(#f6f3ee,#0b1418);--surface:light-dark(#ffffff,#111c21);--sunk:light-dark(#f2eee7,#0d181c);
+--ink:light-dark(#13232a,#e8f0ef);--mute:light-dark(#67777d,#8fa3a8);--line:light-dark(#e8e2d8,#1f2f36);
+--accent:light-dark(#0f7c7b,#4cc9be);--accent-soft:light-dark(#e3f1ee,#14323a);--coral:light-dark(#d4513f,#ff8a7a);--on-ink:light-dark(#ffffff,#0b1418);
+--warn:light-dark(#9a4a08,#fbbf24);--warn-soft:light-dark(#fdf1e2,#2c2210);
+--shadow:0 1px 2px light-dark(rgba(19,35,42,.05),rgba(0,0,0,.3)),0 10px 30px light-dark(rgba(19,35,42,.07),rgba(0,0,0,.35));
+--sky1:light-dark(#ffe6c7,#0a1838);--sky2:light-dark(#ffb59a,#1c3566);--sky3:light-dark(#ff8f7e,#3a5a8c);--sun:light-dark(#ffd36b,#f4f1e2);
+--mtn:light-dark(#8c6a7c,#1a2b47);--mtn2:light-dark(#b98a8a,#24395c);--sea1:light-dark(#3ccac0,#1a6e78);--sea2:light-dark(#0b7f86,#0b3b48);--palm:light-dark(#173f44,#03111a);
+--sans:"Plus Jakarta Sans","Zen Kaku Gothic New",system-ui,sans-serif;--r:20px}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow-x:clip}
+body.lock{overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eyebrow{font:700 11px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0}
+.ja{font-weight:500;letter-spacing:0;text-transform:none;color:var(--mute);margin-left:6px}
+h2{font:800 24px/1.15 var(--sans);letter-spacing:-.025em;margin:2px 0 0}
+.meta{font-size:12.5px;line-height:1.5;color:var(--mute);font-weight:500}
+.meta a{color:var(--accent);text-decoration:none;font-weight:600}
+.msg{font-size:13.5px;color:var(--mute);margin:0}.msg.bad,.sStat.bad{color:var(--coral);font-weight:700}
+/* hero */
+.hero{position:relative;min-height:clamp(380px,44vw,520px);display:flex;flex-direction:column;color:#fff;background:#0c2a30;border-radius:0 0 32px 32px;overflow:hidden;isolation:isolate}
+.heroimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:30% 58%;z-index:-2}
+.shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(to bottom,rgba(4,16,22,.5) 0,rgba(4,16,22,0) 30%,rgba(4,16,22,0) 42%,rgba(4,16,22,.62) 78%,rgba(4,16,22,.78) 100%)}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 28px}
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:max(18px,env(safe-area-inset-top));padding-bottom:12px}
+.brand{flex:none;font:700 15px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;text-shadow:0 1px 12px rgba(0,0,0,.25)}
+.brand svg{width:22px;height:22px;flex:none}
+.trips{display:flex;gap:8px;align-items:center;flex:1 1 auto;justify-content:flex-end}
+.glass{background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(255,255,255,.28);color:#fff}
+.tripsel{appearance:none;-webkit-appearance:none;min-height:44px;width:100%;max-width:300px;border-radius:999px;padding:6px 34px 6px 16px;font:600 14px var(--sans);background:rgba(255,255,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center/12px;text-overflow:ellipsis}
+.tripsel option,.tripsel optgroup{color:#13232a;background:#fff}
+.iconbtn{width:44px;height:44px;border-radius:999px;border:0;background:#fff;color:#13232a;display:grid;place-items:center;flex:none}
+.herotext{margin-top:auto;padding-bottom:64px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px 24px}
+.herotext .eyebrow{color:#fff;opacity:.85;letter-spacing:.22em}
+.hero h1{margin:10px 0 0;font:700 clamp(36px,5.6vw,68px)/1.02 var(--sans);letter-spacing:-.035em;overflow-wrap:anywhere;text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.25)}
+.hero .hm{margin:12px 0 0;font:500 15px/1.4 var(--sans);opacity:.92;display:flex;flex-wrap:wrap;gap:4px 14px}
+.hero .hm span+span::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.6;vertical-align:middle;margin-right:14px}
+.heroside{flex:none;display:grid;justify-items:end;gap:10px}
+.herobtns{display:flex;gap:8px;align-items:center}
+.glasschip{font:600 12px var(--sans);padding:0 14px;min-height:34px;display:inline-flex;align-items:center;border-radius:999px;white-space:nowrap}
+.glasschip.bad{background:rgba(212,81,63,.85)}
+.glassbtn{min-height:40px;padding:0 14px;border-radius:999px;font:600 13px var(--sans);display:inline-flex;align-items:center;gap:6px}
+.credit{font:500 10.5px var(--sans);opacity:.7;color:#fff;text-decoration:none}
+/* tabs */
+.tabs{position:relative;z-index:5;margin:-27px auto 0;width:max-content;max-width:calc(100% - 40px);display:flex;gap:4px;padding:5px;border-radius:999px;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--line);box-shadow:var(--shadow)}
+.tabs a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;color:var(--mute);font:600 15px var(--sans);text-decoration:none}
+.tabs a svg{width:18px;height:18px}
+.tabs a[aria-current=page]{background:var(--ink);color:var(--on-ink)}
+main{max-width:1200px;margin:0 auto;padding:22px 20px 80px}
+/* panels & fields */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.fld{display:grid;gap:6px;margin-top:16px}
+.fld>span{font:700 12px var(--sans);letter-spacing:.02em}
+.fld>span em{font-style:normal;font-weight:500;color:var(--mute);margin-left:6px}
+.fld small{color:var(--mute);font-size:12px}
+.inp{width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--sunk);font:500 16px var(--sans);appearance:none;-webkit-appearance:none}
+select.inp{padding-right:36px;background:var(--sunk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238a979c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px}
+.inp:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.note{font-size:12.5px;color:var(--mute);margin:14px 0 0;line-height:1.6}
+.primary{min-height:52px;padding:0 26px;border-radius:999px;border:0;background:var(--ink);color:var(--on-ink);font:700 16px var(--sans);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.ghost{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:600 14px var(--sans);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+/* trip view */
+.tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.flight{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.flight:first-of-type{border-top:0;padding-top:0}
+.flight .lbl{display:flex;align-items:center;gap:8px;font:700 14px var(--sans)}
+.flight .two .fld{margin-top:10px}
+.status{display:flex;align-items:center;gap:8px;margin:14px 0 0;font-size:14px}
+.status button{border:0;background:none;color:var(--accent);font:600 14px var(--sans);padding:6px 0;text-decoration:underline}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.tripgo{margin-top:20px;display:flex;justify-content:flex-end}
+/* day strip */
+.daystrip{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow-x:auto;padding:12px 20px;margin:0 -20px;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);scrollbar-width:none;scroll-snap-type:x proximity}
+.daystrip::-webkit-scrollbar{display:none}
+.day{flex:none;scroll-snap-align:start;width:64px;min-height:76px;border-radius:16px;border:1px solid var(--line);background:var(--surface);display:grid;justify-items:center;align-content:center;gap:1px;padding:6px 0}
+.day .d1{font:700 10px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.day b{font:700 22px/1.1 var(--sans);letter-spacing:-.02em}
+.day small{font:500 11px/1.2 var(--sans);color:var(--mute)}
+.dots{display:flex;gap:3px;height:6px;align-items:center}
+.dots i{width:4px;height:4px;border-radius:50%;background:var(--coral)}
+.day[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.day[aria-pressed=true] .d1,.day[aria-pressed=true] small{color:inherit;opacity:.7}
+.nodates{padding:28px 0}
+/* plan */
+.work{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start;margin-top:6px}
+.dayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;margin-bottom:20px}
+.startctl{display:inline-flex;align-items:center;gap:8px;background:var(--sunk);border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 12px}
+.startctl span{font:700 12px var(--sans);color:var(--mute)}
+.startctl input{border:0;background:var(--surface);border-radius:10px;min-height:40px;padding:4px 10px;font:700 16px var(--sans);font-variant-numeric:tabular-nums}
+.tl{list-style:none;margin:0;padding:0}
+.tl>li{display:grid;grid-template-columns:50px 18px minmax(0,1fr);column-gap:12px}
+.tl time{font:700 16px/1.35 var(--sans);font-variant-numeric:tabular-nums;text-align:right;letter-spacing:-.01em;white-space:nowrap}
+.tl time small{display:block;font:500 12px/1.4 var(--sans);color:var(--mute)}
+.rail{position:relative}
+.rail::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--line)}
+.tl>li:first-child .rail::before{top:9px}.tl>li:last-child .rail::before{bottom:auto;height:9px}
+.node .rail::after{content:"";position:absolute;left:50%;top:5px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);box-sizing:border-box}
+.stop .rail::after{background:var(--coral);border-color:var(--coral)}
+.flt .rail::after{background:var(--accent);border-color:var(--accent)}
+.leg .rail::before{background:repeating-linear-gradient(to bottom,var(--accent) 0 4px,transparent 4px 8px)}
+.body{padding:0 0 20px}
+.stop time{color:var(--coral)}
+.nm{font-weight:700;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+.nm a{text-decoration:none}
+.leg .body{padding:4px 0 18px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;color:var(--accent);font:700 13px var(--sans)}
+.leg .body .tag{font-weight:500;color:var(--mute)}
+.leg .body button,.leg .body a{border:0;background:none;padding:8px 0;color:var(--accent);font:600 13px var(--sans);text-decoration:underline;text-underline-offset:3px}
+.leg .body .i{width:16px;height:16px}
+.acts{display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.stay{display:inline-flex;align-items:center;gap:6px;min-height:42px;border:1px solid var(--line);border-radius:12px;padding:0 4px 0 10px;background:var(--surface);color:var(--mute)}
+.stay select{appearance:none;-webkit-appearance:none;border:0;background:none;font:700 14px var(--sans);color:var(--ink);min-height:40px;padding:0 6px}
+.ic{width:42px;height:42px;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:grid;place-items:center;color:var(--ink)}
+.ic:disabled{opacity:.35}
+.ic.del{color:var(--coral)}
+.addfirst{width:100%;min-height:56px;border:1.5px dashed var(--line);border-radius:14px;background:none;color:var(--mute);font:600 14px var(--sans);display:flex;align-items:center;justify-content:center;gap:8px}
+.warn{background:var(--warn-soft);color:var(--warn);font-size:13.5px;font-weight:600;border-radius:12px;padding:10px 14px;margin:8px 0 0}
+.finish{margin-top:22px;padding-top:20px;border-top:1px solid var(--line);display:grid;gap:10px}
+/* picker / sheet */
+.sheet{position:sticky;top:112px;max-height:calc(100vh - 128px);display:flex;flex-direction:column;padding:0;overflow:hidden}
+.shtop{flex:none;padding:22px 22px 8px}
+.shhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.grab{display:none}
+.shclose{display:none}
+.from{display:flex;gap:12px;align-items:center;background:var(--accent-soft);border-radius:14px;padding:10px 14px;margin:14px 0 12px}
+.from .i{color:var(--accent);width:20px;height:20px}
+.from b{display:block;font-size:14px;line-height:1.35}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:10px}
+.seg button{border:0;background:none;border-radius:9px;min-height:38px;font:700 13px var(--sans);color:var(--mute)}
+.seg button em{font-style:normal;font-weight:500;margin-left:4px}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.findrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:8px}
+.findrow .inp{min-height:44px;padding:8px 12px}
+.cats{display:flex;gap:6px;overflow-x:auto;padding:10px 0 6px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px;min-height:36px;font:600 13px var(--sans);white-space:nowrap}
+.cat b{font-weight:600;color:var(--mute);margin-left:4px}
+.cat[aria-pressed=true]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.cat[aria-pressed=true] b{color:inherit;opacity:.7}
+.list{list-style:none;margin:0;padding:0 10px 12px;overflow:auto;flex:1;overscroll-behavior:contain}
+.list li{display:grid;grid-template-columns:40px minmax(0,1fr) auto 44px;gap:12px;align-items:center;padding:12px;border-radius:14px}
+.list li+li{border-top:1px solid var(--line)}
+.list li.closed{opacity:.5}
+.badge{width:40px;height:40px;border-radius:12px;background:var(--sunk);display:grid;place-items:center;font-size:19px}
+.list .nm{font-size:15px}
+.dist{text-align:right;line-height:1.15;font-variant-numeric:tabular-nums}
+.dist b{font:700 17px var(--sans);letter-spacing:-.01em;white-space:nowrap}
+.dist b small{font:600 11px var(--sans);margin-left:2px}
+.dist span{display:block;font:500 11px var(--sans);color:var(--mute);white-space:nowrap}
+.dist.near b{color:var(--accent)}
+.dist.na b{font:600 12px var(--sans);color:var(--mute)}
+.addbtn{width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;transition:transform .15s}
+.addbtn:active{transform:scale(.92)}
+.addbtn.on{background:var(--accent-soft);color:var(--accent)}
+.addbtn.just{background:var(--accent);color:#fff}
+.fab{display:none}
+.scrim{display:none}
+/* itinerary */
+.ticket{background:var(--ink);color:var(--on-ink);border-radius:var(--r);display:grid;grid-template-columns:1fr 1fr;overflow:hidden;box-shadow:var(--shadow)}
+.ticket>div{padding:20px 22px;display:grid;gap:2px;align-content:start}
+.ticket>div+div:not(.tfoot){border-left:2px dashed color-mix(in srgb,var(--on-ink) 30%,transparent)}
+.ticket .eyebrow{color:inherit;opacity:.65}
+.ticket .code{font:800 36px/1.05 var(--sans);letter-spacing:-.02em}
+.ticket .t{font:700 20px/1.2 var(--sans);font-variant-numeric:tabular-nums}
+.ticket small{font:500 12.5px var(--sans);opacity:.75}
+.tfoot{grid-column:1/-1;border-top:2px dashed color-mix(in srgb,var(--on-ink) 30%,transparent);padding:14px 22px!important;display:flex!important;justify-content:space-between;align-items:center;gap:14px}
+.tfoot b{font:700 14px var(--sans)}
+.barcode{display:block;height:30px;width:min(44%,200px);background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px,currentColor 4px 5px,transparent 5px 8px,currentColor 8px 11px,transparent 11px 13px);opacity:.8}
+.ithead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:stretch}
+.ithead .panel{display:grid;align-content:space-between;gap:14px}
+.sday{margin-top:28px}
+.sday header{display:flex;align-items:baseline;gap:4px 12px;flex-wrap:wrap;margin:0 0 12px}
+.sday header .eyebrow{color:var(--coral)}
+.sday header h3{margin:0;font:800 20px/1.2 var(--sans);letter-spacing:-.02em}
+.sday header span{font-size:13px;color:var(--mute)}
+.sday .panel{padding:22px 20px 4px}
+.free{color:var(--mute);font-size:14px;padding:0 0 20px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:999px;font:600 14px var(--sans);z-index:80;transition:opacity .2s,transform .2s;pointer-events:none;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:var(--shadow)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(5,15,20,.5);display:grid;place-items:center;padding:16px;z-index:90}
+.modal[hidden]{display:none}
+.modal .box{background:var(--surface);border-radius:22px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow:auto}
+.modal h3{margin:0 0 8px;font:800 20px var(--sans)}
+.modal ul{padding-left:20px;font-size:14px}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+[hidden]{display:none!important}
 
-/* ===== frame ===== */
-.app{max-width:640px;margin:0 auto;min-height:100vh;padding:0 22px 130px;position:relative}
-header.appbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:22px 2px 14px;border-bottom:1px solid var(--ink);margin-bottom:26px;
+/* ---------- スマホ ---------- */
+@media (max-width:899px){
+  .wrap{padding:0 16px}
+  .hero{min-height:calc(372px + env(safe-area-inset-top));border-radius:0 0 26px 26px}
+  .heroimg{object-position:26% 60%}
+  .brand{font-size:13px;letter-spacing:.14em;gap:8px}
+  .herotext{padding-bottom:22px;flex-direction:column;align-items:stretch}
+  .heroside{justify-items:start;gap:8px}
+  .hero .hm{font-size:14px}
+  .hero .hm span:nth-child(3){display:none}
+  .credit{font-size:10px}
+  main{padding:14px 16px calc(150px + env(safe-area-inset-bottom))}
+  #vPlan{margin-top:-14px}
+  .daystrip{margin:0 -16px;padding:10px 16px}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;width:auto;max-width:none;border-radius:0;box-shadow:none;border-width:1px 0 0;justify-content:space-around;gap:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+  .tabs a{flex:1;flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:4px 0;font-size:11px;border-radius:14px}
+  .tabs a svg{width:23px;height:23px}
+  .tabs a[aria-current=page]{background:none;color:var(--ink)}
+  .tabs a[aria-current=page] svg{color:var(--coral)}
+  .tgrid,.work,.ithead{grid-template-columns:minmax(0,1fr)}
+  .panel{padding:20px}
+  #editorWrap{background:none;border:0;box-shadow:none;padding:8px 0 0}
+  .dayhead h2{font-size:22px}
+  .tl>li{grid-template-columns:46px 16px minmax(0,1fr);column-gap:10px}
+  .sheet{position:fixed;left:0;right:0;bottom:0;top:auto;height:92vh;height:92dvh;max-height:none;border-radius:24px 24px 0 0;border-bottom:0;z-index:50;transform:translateY(105%);visibility:hidden;transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility 0s linear .32s}
+  .sheet.open{transform:none;visibility:visible;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  .shtop{padding:6px 16px 6px}
+  .grab{display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
+  .shclose{display:inline-flex}
+  .list{padding:0 6px calc(16px + env(safe-area-inset-bottom))}
+  .list li{grid-template-columns:36px minmax(0,1fr) auto 44px;gap:10px;padding:12px 10px}
+  .badge{width:36px;height:36px;font-size:17px}
+  .scrim{display:block;position:fixed;inset:0;background:rgba(5,15,20,.45);z-index:45;opacity:0;pointer-events:none;transition:opacity .3s}
+  .scrim.on{opacity:1;pointer-events:auto}
+  body[data-view=plan] .fab{display:inline-flex;position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:35;min-height:54px;padding:0 22px;border-radius:999px;border:0;background:var(--coral);color:#fff;font:700 15px var(--sans);align-items:center;gap:8px;box-shadow:0 10px 24px rgba(212,81,63,.35)}
+  body.nodays .fab{display:none!important}
+  .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
+  .sheet.open~.toast,.lock .toast{bottom:calc(24px + env(safe-area-inset-bottom))}
+  .ticket .code{font-size:30px}.ticket>div{padding:16px}
+  .tools .ghost,.tools .primary{flex:1 1 auto;justify-content:center}
+  .finish .primary{width:100%}
+  .tripgo .primary{width:100%}
 }
-.appbar .logo{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.34em}
-.appbar .logo b{color:var(--accent)}
-.appbar .tagline{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--sub)}
-main .view{animation:enter .3s ease both}
-@keyframes enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* floating nav */
-nav.tabs{
-  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:40;
-  display:flex;gap:2px;background:rgba(21,23,28,.94);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-  border-radius:99px;padding:5px;box-shadow:0 10px 30px rgba(21,23,28,.28);
-}
-nav.tabs button{
-  padding:11px 26px;border-radius:99px;color:#9FA2AA;
-  font-size:13px;font-weight:700;letter-spacing:.1em;
-  display:flex;align-items:center;gap:8px;transition:all .2s ease;
-}
-nav.tabs button .dot{width:5px;height:5px;border-radius:50%;background:transparent;transition:background .2s}
-nav.tabs button.on{background:#fff;color:var(--ink)}
-nav.tabs button.on .dot{background:var(--accent)}
-
-/* ===== common ===== */
-.eyebrow{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.3em;
-  color:var(--sub);margin-bottom:8px;text-transform:uppercase;
-}
-h1.page{
-  font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.02em;
-  line-height:1.3;margin-bottom:22px;
-}
-.rule{border:none;border-top:1px solid var(--line);margin:26px 0}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:13px 22px;border-radius:12px;font-size:13.5px;font-weight:700;
-  background:var(--ink);color:#fff;letter-spacing:.06em;
-  transition:transform .15s ease,opacity .15s;
-}
-.btn:active{transform:scale(.97)}
-.btn.accent{background:var(--accent)}
-.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
-.btn.small{padding:8px 14px;font-size:12px;border-radius:9px}
-.btn.wfull{width:100%}
-.btn:disabled{opacity:.4;cursor:default}
-.back{
-  font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--sub);
-  margin-bottom:18px;display:inline-flex;align-items:center;gap:6px;font-weight:700;
-}
-.xbtn{font-size:15px;color:var(--sub);padding:6px 9px;border-radius:8px;line-height:1}
-.xbtn:active{background:var(--line-soft)}
-.empty{padding:52px 10px;text-align:center}
-.empty .mark{
-  font-family:var(--serif);font-size:26px;color:var(--sub);
-  display:inline-block;border:1px solid var(--line);border-radius:50%;
-  width:64px;height:64px;line-height:62px;margin-bottom:14px;
-}
-.empty p{font-size:13.5px;color:var(--sub)}
-.field{margin-bottom:16px}
-.field label{
-  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
-  color:var(--sub);margin-bottom:7px;font-weight:700;
-}
-.field input[type=text],.field input[type=date],.field input[type=time],.field input[type=number],.field select,.field textarea{
-  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#fff;
-  transition:border-color .15s;
-}
-.field textarea{resize:vertical;min-height:80px;line-height:1.6}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.row2{display:flex;gap:12px}
-.row2>.field{flex:1}
-.hint{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
-
-/* ===== city index ===== */
-.city-item{
-  display:flex;width:100%;text-align:left;align-items:baseline;gap:14px;
-  padding:22px 2px;border-bottom:1px solid var(--line);
-  transition:padding .2s ease;
-}
-.city-item:active{padding-left:8px}
-.city-item h3{font-family:var(--serif);font-size:26px;font-weight:600;flex:1;line-height:1.35}
-.city-item .cnt{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--sub)}
-.city-item .arw{font-family:var(--mono);color:var(--accent);font-size:15px}
-.addline{
-  display:flex;width:100%;align-items:center;gap:10px;padding:20px 2px;
-  color:var(--sub);font-family:var(--mono);font-size:12px;letter-spacing:.2em;font-weight:700;
-}
-.addline .pl{
-  width:26px;height:26px;border:1px dashed var(--sub);border-radius:50%;
-  display:inline-flex;align-items:center;justify-content:center;font-size:14px;
-}
-
-/* ===== place cards ===== */
-.toolbar{display:flex;gap:10px;margin-bottom:18px}
-.toolbar .btn{flex:1}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 18px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
-.chip{
-  flex:none;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.12em;
-  padding:7px 15px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--sub);
-  transition:all .15s;
-}
-.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
-.near-note{
-  font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--accent);
-  font-weight:700;margin-bottom:14px;
-}
-.place-card{
-  background:var(--card);border:1px solid var(--line);border-radius:16px;
-  padding:18px 18px 14px;margin-bottom:14px;
-  box-shadow:0 1px 2px rgba(21,23,28,.04);
-}
-.pc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.gtag{
-  display:inline-flex;align-items:center;gap:6px;
-  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--sub);
-}
-.gtag .gd{width:7px;height:7px;border-radius:50%;background:var(--gc,var(--sub))}
-.dist-chip{
-  margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.08em;
-  color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:99px;
-}
-.place-card h4{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.45}
-.place-card .summary{font-size:13px;color:var(--sub);margin-top:6px}
-.pc-foot{display:flex;align-items:center;gap:16px;margin-top:12px;border-top:1px solid var(--line-soft);padding-top:10px}
-.pc-foot a{
-  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em;
-  text-decoration:none;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:1px;
-}
-.pc-foot .xbtn{margin-left:auto}
-
-/* ===== trips ===== */
-.trip-card{
-  display:flex;width:100%;text-align:left;background:var(--card);
-  border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:14px;
-  box-shadow:0 1px 2px rgba(21,23,28,.04);transition:transform .15s ease;
-}
-.trip-card:active{transform:scale(.985)}
-.trip-stub{
-  flex:none;width:92px;background:var(--ink);color:#fff;position:relative;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:16px 8px;font-family:var(--mono);gap:1px;
-}
-.trip-stub::after{content:"";position:absolute;right:-1px;top:10px;bottom:10px;border-right:1.5px dashed rgba(255,255,255,.4)}
-.trip-stub .mo{font-size:10px;letter-spacing:.24em;opacity:.7}
-.trip-stub .dd{font-size:25px;font-weight:700;line-height:1.2}
-.trip-stub .dv{font-size:10px;opacity:.5;margin:2px 0}
-.trip-body{flex:1;padding:16px 16px 14px}
-.trip-body h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.4}
-.trip-body .meta{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--sub);margin-top:5px}
-.trip-body .fmini{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--accent);margin-top:5px;font-weight:700}
-
-/* trip detail */
-.hero{
-  background:var(--ink);color:#fff;border-radius:18px;padding:24px 22px 20px;margin-bottom:26px;
-  position:relative;overflow:hidden;
-}
-.hero::before{
-  content:"";position:absolute;left:22px;right:22px;top:56px;
-  border-top:1px dashed rgba(255,255,255,.25);
-}
-.hero .eyebrow{color:#8F93A0;margin-bottom:16px}
-.hero h2{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.4}
-.hero .dates{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:#B9BCC6;margin-top:6px}
-.hero .xbtn{position:absolute;top:14px;right:12px;color:#8F93A0}
-.flight-card{
-  background:var(--card);border:1px solid var(--line);border-radius:13px;
-  padding:13px 16px;margin-bottom:10px;font-family:var(--mono);
-  display:flex;align-items:center;gap:14px;
-}
-.flight-card .fno{
-  font-weight:700;font-size:12.5px;letter-spacing:.08em;color:var(--accent);
-  background:var(--accent-soft);padding:3px 10px;border-radius:7px;
-}
-.flight-card .route{flex:1;font-size:13px;letter-spacing:.03em}
-.flight-card .route .t{font-weight:700}
-.flight-card .fdate{font-size:10.5px;color:var(--sub);letter-spacing:.1em}
-.day-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.day-chips::-webkit-scrollbar{display:none}
-.day-chip{
-  flex:none;min-width:66px;text-align:center;border:1px solid var(--line);
-  border-radius:12px;padding:9px 12px 7px;background:#fff;font-family:var(--mono);transition:all .15s;
-}
-.day-chip .dw{font-size:9.5px;letter-spacing:.2em;color:var(--sub);display:block}
-.day-chip .dd{font-size:15.5px;font-weight:700}
-.day-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.day-chip.on .dw{color:rgba(255,255,255,.75)}
-.dayhead{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.dayhead .start{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;font-weight:700;color:var(--sub)}
-.dayhead input[type=time]{padding:6px 9px;border:1px solid var(--line);border-radius:9px;font-family:var(--mono);background:#fff}
-
-/* timeline */
-.tl-item{display:flex;gap:14px;margin-bottom:12px}
-.tl-time{
-  flex:none;width:84px;font-family:var(--mono);font-size:12px;font-weight:700;
-  text-align:right;padding-top:14px;line-height:1.55;letter-spacing:.03em;
-}
-.tl-time .end{color:var(--sub);font-weight:400;font-size:11px}
-.tl-node{flex:none;width:12px;position:relative}
-.tl-node::before{content:"";position:absolute;left:5px;top:0;bottom:-12px;border-left:1.5px solid var(--line)}
-.tl-item:last-child .tl-node::before{height:19px;bottom:auto}
-.tl-node::after{
-  content:"";position:absolute;left:0;top:17px;width:11px;height:11px;border-radius:50%;
-  background:var(--dotc,var(--accent));box-shadow:0 0 0 3px var(--bg);
-}
-.tl-card{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 14px}
-.tl-card .nm{font-family:var(--serif);font-weight:600;font-size:15.5px;line-height:1.45}
-.tl-card .gsm{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--sub);margin-top:2px}
-.tl-ctrl{display:flex;align-items:center;gap:6px;margin-top:9px;border-top:1px solid var(--line-soft);padding-top:8px}
-.tl-ctrl input{width:62px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px}
-.tl-ctrl .u{font-size:11px;color:var(--sub);margin-right:auto}
-.tl-item.travel{margin:-4px 0 8px}
-.tl-item.travel .tl-node::before{border-left-style:dotted}
-.tl-item.travel .tl-node::after{display:none}
-.travel-pill{
-  flex:1;display:flex;align-items:center;gap:8px;
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;font-weight:700;color:var(--sub);
-  padding:4px 2px;
-}
-.travel-pill .car{font-size:12px}
-.travel-pill input{
-  width:52px;padding:3px 6px;border:1px solid var(--line);border-radius:7px;
-  font-family:var(--mono);font-size:11.5px;text-align:center;background:#fff;color:var(--ink);
-}
-.travel-pill .src{font-size:9px;letter-spacing:.12em;color:var(--accent);opacity:.85}
-.drive-busy{
-  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;
-  display:inline-flex;align-items:center;gap:7px;
-}
-.spinner.blue{border-color:rgba(43,75,242,.25);border-top-color:var(--accent);width:11px;height:11px}
-.tl-flight{flex:1;border-radius:13px;padding:12px 14px;background:var(--ink);color:#fff;font-family:var(--mono)}
-.tl-flight .nm{font-size:13px;font-weight:700;letter-spacing:.06em}
-.tl-flight .gsm{font-size:11px;opacity:.72;margin-top:2px;letter-spacing:.04em}
-
-/* ===== modal ===== */
-.overlay{
-  position:fixed;inset:0;background:rgba(21,23,28,.45);z-index:60;
-  display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease;
-}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes rise{from{transform:translateY(26px);opacity:.5}to{transform:none;opacity:1}}
-.sheet{
-  background:var(--bg);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
-  border-radius:22px 22px 0 0;padding:0 22px 30px;animation:rise .25s cubic-bezier(.2,.8,.3,1);
-}
-.sheet .grab{width:40px;height:4px;border-radius:99px;background:var(--line);margin:12px auto 6px}
-.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 0 18px}
-.sheet-head h3{font-family:var(--serif);font-size:20px;font-weight:600}
-.seg{display:flex;background:#E9E9E5;border-radius:12px;padding:3px;margin-bottom:20px}
-.seg button{
-  flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:700;
-  color:var(--sub);letter-spacing:.04em;transition:all .15s;
-}
-.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(21,23,28,.12)}
-.ai-result{
-  border:1px solid var(--accent);border-radius:14px;padding:16px;margin:16px 0;background:#fff;
-}
-.ai-result .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--accent);font-weight:700;margin-bottom:12px}
-.ai-result .lbl.err{color:var(--g-food)}
-.spinner{
-  display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);
-  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;
-}
-.spinner.dark{border-color:rgba(21,23,28,.2);border-top-color:var(--ink)}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* bulk import */
-.prog{margin:16px 0}
-.prog-bar{height:5px;background:var(--line);border-radius:99px;overflow:hidden}
-.prog-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s ease}
-.prog-txt{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--sub);margin-top:8px;font-weight:700}
-.bulk-item{
-  display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--line);
-  border-radius:13px;padding:13px 15px;margin-bottom:9px;
-}
-.bulk-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);margin-top:3px}
-.bulk-item .bi{flex:1}
-.bulk-item .bi .n{font-family:var(--serif);font-weight:600;font-size:14.5px}
-.bulk-item .bi .s{font-size:12px;color:var(--sub);margin-top:2px}
-.bulk-item .bi .g{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--sub);margin-top:3px}
-.bulk-item.fail{opacity:.55}
-
-/* picker */
-.pick-item{
-  display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);
-  border-radius:13px;padding:12px 15px;margin-bottom:9px;
-}
-.pick-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
-.pick-item .pi-body{flex:1}
-.pick-item .pi-body .n{font-weight:700;font-size:13.5px}
-.pick-item .pi-body .g{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--sub)}
-.pick-item .dur{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub)}
-.pick-item .dur input{width:56px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px}
-
-/* shiori */
-.shiori{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
-.shiori .head{background:var(--ink);color:#fff;text-align:center;padding:18px 16px 15px}
-.shiori .head .eyebrow{color:#8F93A0;margin-bottom:8px}
-.shiori .head h2{font-family:var(--serif);font-size:21px;font-weight:600}
-.shiori .head .sd{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:#B9BCC6;margin-top:4px}
-.shiori .in{padding:8px 20px 18px}
-.shiori .sday{margin-top:16px}
-.shiori .sday h4{
-  font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--accent);font-weight:700;
-  border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:9px;
-}
-.shiori .sline{display:flex;gap:12px;font-size:13px;margin-bottom:5px}
-.shiori .sline .st{font-family:var(--mono);font-size:11px;flex:none;width:90px;color:var(--sub);padding-top:2px;letter-spacing:.02em}
-.shiori .sline.fl .sn{color:var(--accent);font-weight:700;font-family:var(--mono);font-size:12.5px}
-
-#toast{
-  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(8px);
-  background:var(--ink);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.04em;
-  padding:11px 20px;border-radius:99px;opacity:0;pointer-events:none;
-  transition:all .25s ease;z-index:99;max-width:86%;text-align:center;
-}
-#toast.show{opacity:1;transform:translateX(-50%)}
-#boot{
-  position:fixed;inset:0;background:var(--bg);z-index:100;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-}
-#boot .logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.4em}
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
-}
+@media (max-width:380px){.two{grid-template-columns:1fr}.dist span{display:none}}
+@media (prefers-reduced-motion:reduce){.sheet,.toast,.scrim{transition:none!important}}
+@media (prefers-reduced-motion:no-preference){.waves{animation:drift 14s ease-in-out infinite alternate}@keyframes drift{to{transform:translateX(-40px)}}}
 </style>
 </head>
 <body>
-<div id="boot"><div class="logo">TABI<b style="color:var(--accent)">—</b>NOTE</div><span class="spinner dark"></span></div>
-<div class="app">
-  <header class="appbar">
-    <span class="logo">TABI<b>—</b>NOTE</span>
-    <button class="tagline" style="font-weight:700;letter-spacing:.24em;border:1px solid var(--line);padding:5px 12px;border-radius:99px" onclick="mData()">DATA ⇅</button>
-  </header>
-  <main id="main"></main>
-</div>
-<nav class="tabs">
-  <button id="tab-places" class="on" onclick="go('cities')"><span class="dot"></span>行き先</button>
-  <button id="tab-trips" onclick="go('trips')"><span class="dot"></span>旅程</button>
+<header class="hero">
+  <img class="heroimg" id="heroImg" src="img/hero-1600.jpg" srcset="img/hero-900.jpg 900w, img/hero-1600.jpg 1600w, img/hero-2400.jpg 2400w" sizes="100vw" alt="" decoding="async" fetchpriority="high">
+  <div class="shade"></div>
+  <div class="wrap appbar">
+    <span class="brand"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="15" r="6" fill="#ff8a6a"/><path d="M3 21h20M7 24h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 3v3M5.5 7.5l2 2M20.5 7.5l-2 2" stroke="#ff8a6a" stroke-width="2" stroke-linecap="round"/></svg>Aloha Planner</span>
+    <div class="trips"><select class="tripsel glass" id="tripSel" aria-label="保存している旅行"></select><button class="iconbtn" id="newTrip" aria-label="新しい旅行を作る" title="New trip"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  </div>
+  <div class="wrap herotext">
+    <div><p class="eyebrow" id="covEy">Your trip</p><h1 id="covT"></h1><p class="hm" id="covM"></p></div>
+    <div class="heroside">
+      <div class="herobtns"><span class="glasschip glass sStat">保存：準備中</span><button class="glassbtn glass coverPick" hidden aria-label="カバー写真を変更"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Cover</span></button></div>
+      <a class="credit" id="credit" href="https://unsplash.com/photos/7782WXBriyM" target="_blank" rel="noopener">Photo · Ganapathy Kumar / Unsplash</a>
+    </div>
+  </div>
+  <input type="file" id="coverFile" accept="image/*" hidden>
+</header>
+<nav class="tabs" aria-label="表示切替">
+  <a href="#trip" id="tTrip"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M4 12h16"/></svg>Trip</a>
+  <a href="#plan" id="tPlan"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Plan</a>
+  <a href="#shiori" id="tShiori"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h5"/></svg>Itinerary</a>
 </nav>
-<div id="modal-root"></div>
-<div id="toast"></div>
+
+<main>
+  <!-- Trip -->
+  <section id="vTrip" hidden>
+    <div class="tgrid">
+      <section class="panel">
+        <p class="eyebrow">Trip<span class="ja">旅行</span></p><h2>Details</h2>
+        <label class="fld"><span>Trip name<em>旅行名</em></span><input class="inp" id="title" autocomplete="off" placeholder="Hawaii 2027"><small>Notionのビュー名・列名になります。</small></label>
+        <div class="two"><label class="fld"><span>Depart<em>出発日</em></span><input class="inp" type="date" id="d1"></label><label class="fld"><span>Return<em>帰国日</em></span><input class="inp" type="date" id="d2"></label></div>
+        <p class="note">日付は現地（ハワイ）の日付です。</p>
+      </section>
+      <section class="panel">
+        <p class="eyebrow">Flights<span class="ja">飛行機</span></p><h2>Flights</h2>
+        <div class="flight"><span class="lbl">Arrival · HNL<span class="ja">行きの便</span></span>
+          <div class="two"><label class="fld"><span>Flight<em>便名</em></span><input class="inp" id="outNo" placeholder="JL782" autocomplete="off"></label><label class="fld"><span>Arrive<em>到着</em></span><input class="inp" type="time" id="outArr"></label></div></div>
+        <div class="flight"><span class="lbl">Departure · HNL<span class="ja">帰りの便</span></span>
+          <div class="two"><label class="fld"><span>Flight<em>便名</em></span><input class="inp" id="retNo" placeholder="JL783" autocomplete="off"></label><label class="fld"><span>Depart<em>出発</em></span><input class="inp" type="time" id="retDep"></label></div></div>
+        <p class="note">到着の75分後（入国・レンタカー）を1日目の出発の目安にし、帰りは出発2時間前に空港に着くかを確認します。</p>
+      </section>
+      <section class="panel">
+        <p class="eyebrow">Stay<span class="ja">ホテル</span></p><h2>Home base</h2>
+        <label class="fld"><span>Hotel<em>各日の出発・帰着</em></span><select class="inp" id="hotel"></select></label>
+        <p class="note">Notionには、チェックインからチェックアウトまでの期間で書き込みます。</p>
+        <div class="coverRow" hidden><span class="fld" style="margin-top:20px"><span>Cover photo<em>トップの写真</em></span></span>
+          <div class="btnrow" style="margin-top:8px"><button class="ghost coverPick">写真を変更</button><button class="ghost" id="coverReset" hidden>デフォルトに戻す</button></div></div>
+      </section>
+      <section class="panel">
+        <p class="eyebrow">Sync<span class="ja">Notion連携</span></p><h2>Notion</h2>
+        <p class="status"><i class="dot"></i><span class="nStat">確認中…</span></p>
+        <p class="status"><i class="dot" style="background:var(--mute)"></i><span class="sStat">保存：準備中</span></p>
+        <p id="nLink" class="status"></p>
+      </section>
+    </div>
+    <div class="tripgo"><a class="primary" href="#plan">Start planning <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+  </section>
+
+  <!-- Plan -->
+  <section id="vPlan" hidden>
+    <div class="daystrip" id="days" role="group" aria-label="日程"></div>
+    <div class="work" id="work">
+      <section class="panel" id="editorWrap"><div id="editor" aria-live="polite"></div>
+        <div class="finish"><button class="primary" id="done">Create itinerary <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><p class="msg" id="syncMsg">しおりを作って、Notionの旅行ビューに反映します。</p></div>
+      </section>
+      <aside class="panel sheet" id="picker" aria-label="Notionのスポット">
+        <div class="shtop">
+          <div class="grab" aria-hidden="true"></div>
+          <div class="shhead"><div><p class="eyebrow">Explore<span class="ja">Notionのスポット</span></p><h2 id="pickH">Add stops</h2></div><button class="ghost shclose" id="sheetDone">Done</button></div>
+          <div class="from" id="from"></div>
+          <div class="seg" role="group" aria-label="並び順"><button data-sort="near" id="sNear">Nearest<em>近い順</em></button><button data-sort="list" id="sList">Default<em>登録順</em></button></div>
+          <div class="findrow"><input class="inp" type="search" id="q" placeholder="Search" aria-label="さがす"><select class="inp" id="area" aria-label="エリア"><option value="all">All areas</option></select></div>
+          <div class="cats" id="cats" role="group" aria-label="カテゴリ"></div>
+        </div>
+        <ul class="list" id="list"></ul>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Itinerary -->
+  <section id="vShiori" hidden></section>
+</main>
+
+<button class="fab" id="fab"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add stop</button>
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="box"><h3 id="mTitle">Notionから外す予定</h3><p class="msg">プランから消えた予定ページが、Notionに残っています。ゴミ箱に移しますか？（Notionのゴミ箱から戻せます）</p><ul id="mList"></ul>
+  <div class="btnrow"><button class="primary" id="mYes">ゴミ箱に移動</button><button class="ghost" id="mNo">Notionには残す</button></div></div>
+</div>
+
 <script>
-/* ============ state & storage ============ */
-const KEY="tabinote-v1";
-let D={cities:[],places:[],trips:[]};
-let S={view:"cities",cityId:null,tripId:null,dayKey:null,filter:"all",near:false,userPos:null};
+{
+const DS='f598bd39-d249-83fb-8109-87b5173e55c5', DBID='3b98bd39d24980579a7dda16bc9f2cc2';
+const VIEW='https://www.notion.so/3b98bd39d24980579a7dda16bc9f2cc2?v=3b98bd39d24980c0844e000cadaac415';
+const AIRPORT={id:'airport',title:'ホノルル空港（HNL）',lat:21.3187,lng:-157.9225};
+const CAT_ORDER=['朝食🥞','ランチ🍝','夕食🍴','カフェ☕️','スイーツ🍦','買い物🛍️','スーパー🛒','ビーチ🏖️','自然系⛰️','公園🛝','娯楽系🎡','文化系✏️','ホテル🏨','移動🚗','駐車場🅿️'];
+const STAY={'朝食🥞':60,'ランチ🍝':60,'夕食🍴':90,'カフェ☕️':40,'スイーツ🍦':30,'買い物🛍️':90,'スーパー🛒':40,'ビーチ🏖️':120,'自然系⛰️':120,'公園🛝':60,'娯楽系🎡':150,'文化系✏️':90,'ホテル🏨':30,'移動🚗':20,'駐車場🅿️':10};
+const STAYS=[10,15,20,30,40,45,60,75,90,120,150,180,240,300];
+const WD='日月火水木金土';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const WDE=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WDL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const LS_SPOTS='hawaii-planner-spots', LS_TRIPS='hawaii-planner-trips', LS_CUR='hawaii-planner-cur', LS_SORT='hawaii-planner-sort';
+const sv=(p,cls='i')=>`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const ICON={
+  car:sv('<path d="M5 16v-4l2-5h10l2 5v4"/><path d="M3 16h18v3H3z"/><path d="M5 12h14"/>'),
+  walk:sv('<circle cx="13" cy="4" r="2"/><path d="M11 21l2-6-3-3 1-5 4 4h3"/><path d="M8 21l2-5M9 9l-3 3"/>'),
+  plane:sv('<path d="M2 16l20-6-2-2-7 2-5-6H6l3 7-5 1-2-2H1l1 6z"/>'),
+  bed:sv('<path d="M3 19V6M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-8v6"/><circle cx="6.5" cy="11" r="1.5"/>'),
+  pin:sv('<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>'),
+  plus:sv('<path d="M12 5v14M5 12h14"/>'),
+  check:sv('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  up:sv('<path d="M12 19V5M6 11l6-6 6 6"/>'),
+  down:sv('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+  x:sv('<path d="M6 6l12 12M18 6L6 18"/>'),
+  clock:sv('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  out:sv('<path d="M7 17L17 7M9 7h8v8"/>')
+};
 const $=s=>document.querySelector(s);
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const GENRES=["食事","観光","買い物","食料品","イベント"];
-const GCOLOR={"食事":"var(--g-food)","観光":"var(--g-sight)","買い物":"var(--g-shop)","食料品":"var(--g-grocery)","イベント":"var(--g-event)"};
-const GPAL=["#C2554F","#3D6FB0","#8A6FBF","#3E8A72","#B0762E","#6B7A46","#A34E7E"];
-function allGenres(){return[...GENRES,...(D.customGenres||[]).map(g=>g.name)]}
-function genreColor(g){
-  if(GCOLOR[g])return GCOLOR[g];
-  const c=(D.customGenres||[]).find(x=>x.name===g);
-  return c?c.color:"var(--sub)";
-}
-function genreOptions(sel){
-  return allGenres().map(g=>`<option ${g===sel?"selected":""}>${esc(g)}</option>`).join("")
-    +`<option value="__new__">＋ 新しいジャンルを追加…</option>`;
-}
-async function genreSel(el){
-  if(el.value!=="__new__"){el.dataset.prev=el.value;return;}
-  const n=(prompt("新しいジャンル名を入力(例: カフェ / ビーチ / 夜遊び)")||"").trim();
-  if(!n){el.value=el.dataset.prev||GENRES[0];return;}
-  if(!allGenres().includes(n)){
-    D.customGenres.push({name:n,color:GPAL[D.customGenres.length%GPAL.length]});
-    await save();
-  }
-  el.innerHTML=genreOptions(n);el.dataset.prev=n;
-  toast("ジャンル「"+n+"」を追加しました");
-}
+const $$=s=>document.querySelectorAll(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl=u=>typeof u==='string'&&u.startsWith('https://')?u:'';
+const toMin=t=>{if(!t||!/^\d{1,2}:\d{2}/.test(t))return null;const[h,m]=t.split(':').map(Number);return h*60+m};
+const hm=m=>{m=Math.round(m);const r=((m%1440)+1440)%1440;return String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0')};
+const plus=m=>m>=1440?'+1 ':'';
+const uid=()=>'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const emojiOf=cats=>{for(const c of cats||[]){const m=String(c).match(/\p{Extended_Pictographic}/u);if(m)return m[0]}return '📍'};
+const catName=c=>String(c).replace(/[\p{Extended_Pictographic}\uFE0F]/gu,'');
+const arr=v=>{if(Array.isArray(v))return v;try{const a=JSON.parse(v||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const ymd=s=>{const [y,m,d]=s.split('-').map(Number);return {y,m,d,w:new Date(y,m-1,d).getDay()}};
+const enShort=s=>{const t=ymd(s);return `${MON[t.m-1]} ${t.d}`};
+const enFull=s=>{const t=ymd(s);return `${MON[t.m-1]} ${t.d}, ${t.y}`};
+const durTxt=m=>m>=60?`${m/60|0}h${m%60?' '+m%60+'m':''}`:`${m} min`;
+const isMobile=()=>!!(window.matchMedia&&matchMedia('(max-width:899px)').matches);
+const cssq=s=>String(s).replace(/["\\]/g,'\\$&');
 
-async function load(){
-  try{const r=await window.storage.get(KEY);if(r&&r.value)D=JSON.parse(r.value);}catch(e){/* first run */}
-  if(!D.customGenres)D.customGenres=[];
-  migrateDays();
-  $("#boot").remove();render();
-}
-async function save(){
-  try{await window.storage.set(KEY,JSON.stringify(D));}
-  catch(e){toast("保存に失敗しました。通信環境をご確認ください");}
-}
-function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove("show"),2600);}
+const blank=()=>({version:2,title:'',startDate:'',endDate:'',hotel:null,flights:{outNo:'',outArr:'',retNo:'',retDep:''},days:{},notionMap:{},notionSet:{},finalizedAt:0,updatedAt:0});
+function migrate(st){ if(!(st.version>=2)){ st.legacy=Object.values(st.notionMap||{}).map(x=>({id:x.id,t:x.t})); st.notionMap={}; st.version=2 } return st }
+/* データのリセット：この日付が変わると、各端末に残っている旅行データを一度だけ消す */
+const DATA_EPOCH='2026-11-26', LS_EPOCH='hawaii-planner-epoch';
+try{ if(localStorage.getItem(LS_EPOCH)!==DATA_EPOCH){ [LS_TRIPS,LS_CUR,'hawaii-planner-state'].forEach(k=>localStorage.removeItem(k)); localStorage.setItem(LS_EPOCH,DATA_EPOCH) } }catch(e){}
+let trips=lsGet(LS_TRIPS)||{};
+{const old=lsGet('hawaii-planner-state'); if(old&&!trips.main) trips.main=old}
+let curId=lsGet(LS_CUR); if(!curId||!trips[curId]) curId=Object.keys(trips).sort((a,b)=>(trips[b].updatedAt||0)-(trips[a].updatedAt||0))[0]||'main';
+let state=migrate(Object.assign(blank(),clone(trips[curId]||{})));
+let spots=(lsGet(LS_SPOTS)||[]).filter(s=>s&&s.url);
+let sel=null, cat='all', area='all', q='', sortMode=lsGet(LS_SORT)==='list'?'list':'near';
+let knownProps=new Set();
+let db=null, mcp=null, saving=false, pend=null, saveTimer=null, loadTimer=null, syncing=false, toastTimer=null;
 
-/* ============ helpers ============ */
-function city(id){return D.cities.find(c=>c.id===id)}
-function place(id){return D.places.find(p=>p.id===id)}
-function trip(id){return D.trips.find(t=>t.id===id)}
-function fmtD(iso){const d=new Date(iso+"T00:00:00");return (d.getMonth()+1)+"/"+d.getDate()+" "+"日月火水木金土"[d.getDay()]}
-function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function daysBetween(a,b){
-  const out=[];let d=new Date(a+"T00:00:00");const e=new Date(b+"T00:00:00");let i=0;
-  while(d<=e&&i<60){out.push(ymd(d));d.setDate(d.getDate()+1);i++;}
+function dates(){
+  const a=state.startDate,b=state.endDate; if(!a||!b||b<a) return [];
+  const out=[]; const [y,m,d]=a.split('-').map(Number); const t=new Date(y,m-1,d);
+  for(let i=0;i<45;i++){const s=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); if(s>b)break; out.push(s); t.setDate(t.getDate()+1)}
   return out;
 }
-/* 旧バージョンで1日前にズレて保存されたデータを正しい日付へ移す */
-function migrateDays(){
-  (D.trips||[]).forEach(t=>{
-    const valid=new Set(daysBetween(t.start,t.end));
-    Object.keys(t.days||{}).forEach(k=>{
-      if(valid.has(k))return;
-      const d=new Date(k+"T00:00:00");d.setDate(d.getDate()+1);
-      const nk=ymd(d);
-      if(valid.has(nk)&&!t.days[nk])t.days[nk]=t.days[k];
-      delete t.days[k];
-    });
-  });
-}
-function addMin(hhmm,min){
-  let[h,m]=hhmm.split(":").map(Number);m+=min;h+=Math.floor(m/60);m%=60;h%=24;
-  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
-}
-function haversine(a,b){
-  const R=6371,r=x=>x*Math.PI/180;
-  const dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+const dlong=s=>{const t=ymd(s);return `${t.m}月${t.d}日（${WD[t.w]}）`};
+const dayOf=s=>(state.days[s]||(state.days[s]={start:'',stops:[]}));
+
+function drive(a,b){
+  if(!a||!b||a.lat==null||b.lat==null) return null;
+  const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
   const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;
-  return 2*R*Math.asin(Math.sqrt(h));
+  const km=2*R*Math.asin(Math.sqrt(h));
+  if(km<0.25) return {min:5,km,walk:true};
+  const road=km*1.3, v=22+43*(1-Math.exp(-road/15)); /* 市街地≒25km/h、フリーウェイを含む長距離≒60km/h */
+  return {min:Math.ceil((road/v*60+5)/5)*5,km:road};
 }
-function fmtKm(k){return k<1?Math.round(k*1000)+"m":k.toFixed(1)+"km"}
-/* ---- drive-time ---- */
-function round5(n){return Math.max(5,Math.round(n/5)*5)}
-function estTravel(pa,pb){
-  if(!pa||!pb||pa.lat==null||pb.lat==null)return null;
-  const km=haversine(pa,pb)*1.35;            // 道路係数
-  return round5(km/28*60);                    // 市街地 約28km/h
-}
-function recalcTravel(day,resetManual){
-  const items=day.items;
-  items.forEach((it,i)=>{
-    if(i===0){it.tMin=null;it.tSrc=null;return;}
-    if(!resetManual&&it.tSrc==="manual")return;
-    const a=place(items[i-1].placeId),b=place(it.placeId);
-    const e=estTravel(a,b);
-    it.tMin=e;it.tSrc=e!=null?"est":null;
-  });
-}
-let _aiTravelTimer=null;
-function autoAiTravel(){
-  clearTimeout(_aiTravelTimer);
-  _aiTravelTimer=setTimeout(()=>aiTravel(),1200);
-}
-async function aiTravel(){
-  const t=trip(S.tripId);if(!t)return;
-  const day=dayObj(t,S.dayKey);
-  const pairs=[];
-  day.items.forEach((it,i)=>{
-    if(i===0||it.tSrc==="manual")return;
-    const a=place(day.items[i-1].placeId),b=place(it.placeId);
-    if(a&&b)pairs.push({i,a,b});
-  });
-  if(!pairs.length)return;
-  S.travelBusy=true;render();
-  try{
-    const c=t.cityId?city(t.cityId):null;
-    const list=pairs.map((p,n)=>{
-      const ca=p.a.lat!=null?`(${p.a.lat},${p.a.lng})`:"";
-      const cb=p.b.lat!=null?`(${p.b.lat},${p.b.lng})`:"";
-      return `${n+1}. ${p.a.name}${ca} → ${p.b.name}${cb}`;
-    }).join("\n");
-    const text=await askClaude(`以下は旅行中の1日の移動区間リストです${c?"(都市: "+c.name+")":""}。各区間について、車(タクシー・レンタカー)でのおおよその移動時間(分)を、地理知識と必要に応じてウェブ検索で見積もってください。
-${list}
+const gdir=(a,b)=>`https://www.google.com/maps/dir/?api=1&origin=${a.lat},${a.lng}&destination=${b.lat},${b.lng}&travelmode=driving`;
 
-出力フォーマット(JSON配列以外は一切出力しない。必ず${pairs.length}件、同じ順序で):
-[{"min":移動時間の整数(分)}]`,true,2000);
-    const arr=pickJSONArr(text);
-    pairs.forEach((p,n)=>{
-      const day2=dayObj(trip(S.tripId),S.dayKey);
-      const it=day2.items[p.i];
-      if(it&&it.tSrc!=="manual"&&arr[n]&&typeof arr[n].min==="number"){
-        it.tMin=round5(arr[n].min);it.tSrc="ai";
-      }
+function computeDay(date){
+  const list=dates(), i=list.indexOf(date), first=i===0, last=i===list.length-1&&list.length>0;
+  const d=dayOf(date), f=state.flights, hotel=state.hotel;
+  const arr=first?toMin(f.outArr):null;
+  const origin=first&&arr!=null?AIRPORT:(hotel||null);
+  const auto=first&&arr!=null?arr+75:540;
+  const start=toMin(d.start)??auto;
+  const warns=[];
+  if(first&&arr!=null&&start<arr+60) warns.push(`ホノルル到着が${hm(arr)}なので、出発は${hm(arr+60)}以降が現実的です。`);
+  let t=start, prev=origin; const rows=[];
+  for(const s of d.stops){
+    const est=drive(prev,s), leg=prev?(s.legMin!=null?s.legMin:(est?est.min:0)):0;
+    const arrive=t+leg, depart=arrive+(s.stay??60);
+    rows.push({s,leg,est,from:prev,arrive,depart}); t=depart; prev=s;
+  }
+  let end=null; const dep=last?toMin(f.retDep):null;
+  if(last&&dep!=null){const e=drive(prev,AIRPORT);const leg=prev?(e?e.min:0):0;end={place:AIRPORT,leg,from:prev,arrive:t+leg};
+    if(end.arrive>dep-120) warns.push(`空港着が${hm(end.arrive)}です。${hm(dep)}発なので${hm(dep-120)}までに着くよう、予定を減らすか早めてください（レンタカー返却込み）。`);}
+  else if(hotel&&prev&&prev.id!==hotel.id){const e=drive(prev,hotel);end={place:hotel,leg:e?e.min:0,from:prev,arrive:t+(e?e.min:0)}}
+  return {date,first,last,origin,start,rows,end,warns,arr,dep};
+}
+/* スポットを選ぶときの基準地点：その日の最後の予定。予定がなければ出発地（1日目は空港、ほかはホテル） */
+function refPoint(){
+  if(!sel) return null;
+  const st=dayOf(sel).stops, c=computeDay(sel);
+  if(st.length){const r=c.rows[c.rows.length-1];return {p:st[st.length-1],kind:'last',at:r.depart}}
+  return c.origin?{p:c.origin,kind:'origin',at:c.start}:null;
+}
+
+/* ---------- 描画 ---------- */
+function renderAll(){renderHead();renderTrip();renderDays();renderEditor();renderPicker();if(!$('#vShiori').hidden)renderShiori()}
+function renderHead(){
+  const list=dates();
+  $('#covT').textContent=state.title||'Untitled trip';
+  $('#covM').innerHTML=list.length?`<span>${enShort(list[0])} – ${enFull(list[list.length-1])}</span><span>${list.length-1} nights</span>${state.hotel?`<span>${esc(state.hotel.title)}</span>`:''}`:'<span>Tripタブで日程を入れてください</span>';
+  applyCover();
+  $('#covEy').textContent=list.length?`${list.length} days in Hawaiʻi`:'Your trip';
+  document.title=(state.title||'Aloha Planner')+' · Aloha Planner';
+  const ids=Object.keys(trips); if(!ids.includes(curId)) ids.unshift(curId);
+  ids.sort((a,b)=>String((trips[a]||state).startDate||'9').localeCompare(String((trips[b]||state).startDate||'9')));
+  $('#tripSel').innerHTML=ids.map(id=>{const t=id===curId?state:trips[id]; const d=t.startDate?`  ·  ${MON[+t.startDate.slice(5,7)-1]} ${t.startDate.slice(0,4)}`:''; return `<option value="${esc(id)}"${id===curId?' selected':''}>${esc((t.title||'Untitled trip')+d)}</option>`}).join('');
+  document.body.classList.toggle('nodays',!list.length);
+}
+function renderTrip(){
+  if(document.activeElement!==$('#title')) $('#title').value=state.title||'';
+  $('#d1').value=state.startDate||''; $('#d2').value=state.endDate||'';
+  const f=state.flights;
+  for(const k of ['outNo','outArr','retNo','retDep']) if(document.activeElement!==$('#'+k)) $('#'+k).value=f[k]||'';
+  const hs=spots.filter(s=>s.cats.includes('ホテル🏨')), others=spots.filter(s=>!s.cats.includes('ホテル🏨')), cur=state.hotel?.id||'';
+  const opt=s=>`<option value="${esc(s.id)}"${s.id===cur?' selected':''}>${esc(s.title)}</option>`;
+  let h='<option value="">（未設定）</option>';
+  if(state.hotel&&!spots.some(s=>s.id===cur)) h+=`<option value="${esc(cur)}" selected>${esc(state.hotel.title)}</option>`;
+  h+=(hs.length?`<optgroup label="ホテル">${hs.map(opt).join('')}</optgroup>`:'')+(others.length?`<optgroup label="その他のスポット">${others.map(opt).join('')}</optgroup>`:'');
+  $('#hotel').innerHTML=h;
+  $('#nLink').innerHTML=viewUrl()?`<a class="ghost" href="${viewUrl()}" target="_blank" rel="noopener">Open this trip in Notion ${ICON.out}</a>`:'';
+}
+function renderDays(){
+  const list=dates(); const box=$('#days');
+  if(!list.length){box.innerHTML='';$('#work').hidden=true;
+    if(!$('#nodates')) box.insertAdjacentHTML('afterend','<div class="panel nodates" id="nodates"><p class="eyebrow">Plan</p><h2>まず日程を決めましょう</h2><p class="note">Tripタブで出発日と帰国日を入れると、ここに1日ずつ並びます。</p><p style="margin-top:16px"><a class="primary" href="#trip">Tripタブへ</a></p></div>');
+    return}
+  $('#nodates')?.remove(); $('#work').hidden=false;
+  if(!list.includes(sel)) sel=list[0];
+  box.innerHTML=list.map((d,i)=>{const n=(state.days[d]?.stops||[]).length, t=ymd(d);
+    return `<button class="day" data-day="${d}" aria-pressed="${d===sel}" aria-label="Day ${i+1} ${dlong(d)} ${n}件"><span class="d1">Day ${i+1}</span><b>${t.d}</b><small>${WDE[t.w]}</small><span class="dots">${'<i></i>'.repeat(Math.min(n,4))}</span></button>`}).join('');
+  const on=box.querySelector('[aria-pressed=true]'); if(on&&on.scrollIntoView&&box.scrollWidth>box.clientWidth){const l=on.offsetLeft-box.clientWidth/2+on.offsetWidth/2;box.scrollTo?.({left:l,behavior:'smooth'})}
+}
+function stayOpts(v){const set=STAYS.includes(v)?STAYS:[...STAYS,v].sort((a,b)=>a-b);return set.map(x=>`<option value="${x}"${x===v?' selected':''}>${durTxt(x)}</option>`).join('')}
+/* 1日のタイムライン（編集画面としおりで共通） */
+function tlHtml(c,edit){
+  const f=state.flights; let h='<ol class="tl">';
+  const node=(cls,time,body)=>`<li class="node ${cls}"><time>${time}</time><i class="rail"></i><div class="body">${body}</div></li>`;
+  if(c.first&&c.arr!=null) h+=node('flt edge',hm(c.arr),`<div class="nm">${esc(f.outNo||'Flight')} arrives HNL</div><div class="meta">ホノルル到着・入国・レンタカー</div>`);
+  if(c.rows.length||edit) h+=node('edge',hm(c.start),`<div class="nm">${esc(c.origin?c.origin.title:'出発地が未設定')}</div><div class="meta">${c.origin?'Depart · 出発':'Tripタブでホテルを選べます'}</div>`);
+  if(!c.rows.length) h+=edit?`<li><span></span><i class="rail"></i><div class="body"><button class="addfirst" data-open="1">${ICON.plus}最初の行き先を追加</button></div></li>`:`<li><span></span><i class="rail"></i><div class="body free">Free day · 予定なし</div></li>`;
+  c.rows.forEach((r,k)=>{const s=r.s;
+    if(r.from){const walk=r.est&&r.est.walk, tag=s.legMin!=null?'手入力':(walk?'徒歩圏':'推定');
+      h+=`<li class="leg"><span></span><i class="rail"></i><div class="body">${walk?ICON.walk:ICON.car}<span>${r.leg} min</span><span class="tag">${tag}</span>${edit?`<button data-act="leg" data-i="${k}">Edit</button>${s.legMin!=null?`<button data-act="legreset" data-i="${k}">推定に戻す</button>`:''}`:''}<a href="${gdir(r.from,s)}" target="_blank" rel="noopener">Route</a></div></li>`}
+    const u=safeUrl(s.url), info=[(s.areas||[]).join('・'),edit?(s.cats||[]).map(catName).join('・'):s.place].filter(Boolean).map(esc).join('　');
+    h+=`<li class="node stop"><time>${plus(r.arrive)}${hm(r.arrive)}<small>${plus(r.depart)}${hm(r.depart)}</small></time><i class="rail"></i><div class="body">
+      <div class="nm">${!edit&&u?`<a href="${u}" target="_blank" rel="noopener">${esc(s.title)}</a>`:esc(s.title)}</div>
+      <div class="meta">${info}${edit&&u?`　<a href="${u}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div>
+      ${edit?`<div class="acts"><label class="stay">${ICON.clock}<select data-act="stay" data-i="${k}" aria-label="滞在時間">${stayOpts(s.stay??60)}</select></label>
+      <button class="ic" data-act="up" data-i="${k}" aria-label="ひとつ前へ"${k?'':' disabled'}>${ICON.up}</button>
+      <button class="ic" data-act="down" data-i="${k}" aria-label="ひとつ後ろへ"${k<c.rows.length-1?'':' disabled'}>${ICON.down}</button>
+      <button class="ic del" data-act="del" data-i="${k}" aria-label="${esc(s.title)}を外す">${ICON.x}</button></div>`:''}</div></li>`;
+  });
+  if(c.end&&c.rows.length){
+    h+=`<li class="leg"><span></span><i class="rail"></i><div class="body">${ICON.car}<span>${c.end.leg} min</span><span class="tag">推定</span>${c.end.from?`<a href="${gdir(c.end.from,c.end.place)}" target="_blank" rel="noopener">Route</a>`:''}</div></li>`;
+    h+=node('edge',`${plus(c.end.arrive)}${hm(c.end.arrive)}`,`<div class="nm">${esc(c.end.place.title)}</div><div class="meta">${c.end.place.id==='airport'?'Airport · レンタカー返却':'Back to hotel · 帰着'}</div>`);
+  }
+  if(c.last&&c.dep!=null) h+=node('flt edge',hm(c.dep),`<div class="nm">${esc(f.retNo||'Flight')} departs HNL</div><div class="meta">ホノルル出発</div>`);
+  return h+'</ol>'+c.warns.map(w=>`<p class="warn">${esc(w)}</p>`).join('');
+}
+function renderEditor(){
+  const ed=$('#editor'); const list=dates(); if(!list.length){ed.innerHTML='';return}
+  const c=computeDay(sel), i=list.indexOf(sel), t=ymd(sel);
+  ed.innerHTML=`<div class="dayhead"><div><p class="eyebrow">Day ${i+1} · ${WDL[t.w]}</p><h2>${MONL[t.m-1]} ${t.d}</h2></div>
+    <label class="startctl"><span>Start</span><input type="time" id="start" value="${hm(c.start)}" aria-label="出発時刻"></label></div>`+tlHtml(c,true);
+}
+function usedMap(){const m=new Map();dates().forEach((d,i)=>(state.days[d]?.stops||[]).forEach(s=>{if(!m.has(s.id))m.set(s.id,[]);m.get(s.id).push(i+1)}));return m}
+function distHtml(x){
+  if(x.here) return `<div class="dist na"><b>Here</b></div>`;
+  if(!x.d) return `<div class="dist na"><b>${x.s.lat==null?'座標なし':'—'}</b></div>`;
+  return `<div class="dist${x.d.min<=15?' near':''}" title="車で約${x.d.min}分（推定）"><b>${x.d.walk?'Walk':x.d.min}${x.d.walk?'':'<small>min</small>'}</b><span>${x.d.km<1?Math.round(x.d.km*1000)+' m':x.d.km.toFixed(1)+' km'}</span></div>`;
+}
+function renderPicker(){
+  const cnt={}; spots.forEach(s=>s.cats.forEach(c=>cnt[c]=(cnt[c]||0)+1));
+  const cats=Object.keys(cnt).sort((a,b)=>{const ia=CAT_ORDER.indexOf(a),ib=CAT_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)});
+  if(cat!=='all'&&!cnt[cat]) cat='all';
+  $('#cats').innerHTML=`<button class="cat" data-cat="all" aria-pressed="${cat==='all'}">All<b>${spots.length}</b></button>`+cats.map(c=>`<button class="cat" data-cat="${esc(c)}" aria-pressed="${c===cat}">${esc(c)}<b>${cnt[c]}</b></button>`).join('');
+  const areas=[...new Set(spots.flatMap(s=>s.areas))];
+  $('#area').innerHTML='<option value="all">All areas</option>'+areas.map(a=>`<option value="${esc(a)}"${a===area?' selected':''}>${esc(a)}</option>`).join('');
+  $('#sList').setAttribute('aria-pressed',sortMode==='list'); $('#sNear').setAttribute('aria-pressed',sortMode==='near');
+  const has=dates().length>0, ref=has?refPoint():null, dayIdx=dates().indexOf(sel)+1;
+  $('#from').hidden=!has;
+  $('#from').innerHTML=!has?'':ref?`${ref.kind==='last'?ICON.pin:(ref.p.id==='airport'?ICON.plane:ICON.bed)}<div><p class="eyebrow">Drive times from${ref.kind==='last'?' · '+hm(ref.at):''}</p><b>${esc(ref.p.title)}</b></div>`
+    :`${ICON.bed}<div><b>出発地がまだありません</b><p class="meta" style="margin:0">Tripタブでホテル（1日目は行きの便）を入れると、各スポットまでの時間が出ます。</p></div>`;
+  const used=usedMap(), qq=q.trim().toLowerCase();
+  let rows=spots.filter(s=>(cat==='all'||s.cats.includes(cat))&&(area==='all'||s.areas.includes(area))&&(!qq||(s.title+' '+s.place).toLowerCase().includes(qq)))
+    .map((s,n)=>{const here=!!(ref&&ref.p.id===s.id);return {s,n,here,d:ref&&!here?drive(ref.p,s):null}});
+  if(sortMode==='near') rows.sort((a,b)=>(a.d?a.d.km:a.here?1e8:1e9)-(b.d?b.d.km:b.here?1e8:1e9)||a.n-b.n);
+  $('#list').innerHTML=rows.length?rows.map(x=>{const s=x.s,u=used.get(s.id), on=u&&u.includes(dayIdx), link=safeUrl(s.url);
+    return `<li class="${/閉業/.test(s.title)?'closed':''}"><span class="badge" aria-hidden="true">${emojiOf(s.cats)}</span><div><div class="nm">${esc(s.title)}</div>
+    <div class="meta">${esc(s.areas.join('・'))}${u?`　✓ Day ${u.join('・')}`:''}${link?`　<a href="${link}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div>
+    ${distHtml(x)}<button class="addbtn${on?' on':''}" data-add="${esc(s.id)}" aria-label="${esc(s.title)}をDay ${dayIdx}に追加"${has?'':' disabled'}>${on?ICON.check:ICON.plus}</button></li>`}).join('')
+    :`<li style="display:block"><p class="msg">${spots.length?'条件に合うスポットがありません。':'Notionのスポットを読み込むと、ここに並びます。'}</p></li>`;
+  $('#pickH').textContent=has?`Add to Day ${dayIdx}`:'Add stops';
+}
+const viewUrl=()=>state.viewId?`https://www.notion.so/${DBID}?v=${state.viewId.replace('view://','').replace(/-/g,'')}`:'';
+function renderShiori(){
+  const list=dates(), v=$('#vShiori'), f=state.flights;
+  if(!list.length){v.innerHTML='<div class="panel"><p class="eyebrow">Itinerary</p><h2>まだしおりがありません</h2><p class="note">Planで日程と行き先を決めて、Create itineraryを押してください。</p></div>';return}
+  const a=list[0], b=list[list.length-1];
+  let nStops=0, drv=0; list.forEach(d=>{const c=computeDay(d); nStops+=c.rows.length; c.rows.forEach(r=>{if(r.from)drv+=r.leg}); if(c.end&&c.rows.length)drv+=c.end.leg});
+  const stat=(v,l)=>`<div><b style="display:block;font:800 26px/1.1 var(--sans);letter-spacing:-.02em">${v}</b><span class="meta">${l}</span></div>`;
+  let h=`<div class="ithead"><div class="panel"><div><p class="eyebrow">Itinerary<span class="ja">旅のしおり</span></p><h2>At a glance</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">${stat(list.length,'days')}${stat(nStops,'stops')}${stat(drv>=60?`${drv/60|0}h ${drv%60}m`:`${drv}m`,'driving')}</div>
+    ${state.hotel?`<p class="status" style="margin:0">${ICON.bed}<span>${esc(state.hotel.title)}</span></p>`:''}</div>
+    <div class="ticket"><div><span class="eyebrow">Arrival</span><span class="code">HNL</span><span class="t">${esc(f.outArr||'--:--')}</span><small>${esc(f.outNo||'Flight —')} · ${WDE[ymd(a).w]}, ${enShort(a)}</small></div>
+    <div><span class="eyebrow">Departure</span><span class="code">HNL</span><span class="t">${esc(f.retDep||'--:--')}</span><small>${esc(f.retNo||'Flight —')} · ${WDE[ymd(b).w]}, ${enShort(b)}</small></div>
+    <div class="tfoot"><div><span class="eyebrow">Boarding pass</span><br><b>${esc(state.title||'My trip')}</b></div><i class="barcode" aria-hidden="true"></i></div></div></div>`;
+  list.forEach((d,i)=>{const c=computeDay(d), t=ymd(d);
+    h+=`<section class="sday"><header><span class="eyebrow">Day ${i+1}</span><h3>${WDL[t.w]}, ${MONL[t.m-1]} ${t.d}</h3><span>${dlong(d)}</span></header><div class="panel">${tlHtml(c,false)}</div></section>`});
+  h+=`<div class="tools"><button class="primary" id="resync">Sync to Notion</button><button class="ghost" id="copy">Copy as text</button>${viewUrl()?`<a class="ghost" href="${viewUrl()}" target="_blank" rel="noopener">Open in Notion ${ICON.out}</a>`:''}</div>
+  <p class="msg" id="copyMsg"></p><p class="note">移動時間は2地点の距離から推定した目安です。実際の道路状況はGoogleマップで確認してください。</p>`;
+  v.innerHTML=h;
+}
+function asText(){
+  const list=dates(), f=state.flights; let t=`${state.title}\n${dlong(list[0])}〜${dlong(list[list.length-1])}\n`;
+  if(f.outArr) t+=`行き：${f.outNo} ${f.outArr} ホノルル着\n`; if(f.retDep) t+=`帰り：${f.retNo} ${f.retDep} ホノルル発\n`; if(state.hotel) t+=`ホテル：${state.hotel.title}\n`;
+  list.forEach((d,i)=>{const c=computeDay(d); t+=`\n■ Day ${i+1} ${dlong(d)}\n`; if(c.rows.length) t+=`${hm(c.start)} ${c.origin?c.origin.title:''} 出発\n`; else t+='フリー\n';
+    c.rows.forEach(r=>{if(r.from)t+=`　↓ 車で約${r.leg}分\n`;t+=`${hm(r.arrive)}〜${hm(r.depart)} ${r.s.title}\n`}); if(c.end&&c.rows.length)t+=`　↓ 車で約${c.end.leg}分\n${hm(c.end.arrive)} ${c.end.place.title}\n`});
+  return t;
+}
+/* カバー写真：旅行ごとに差し替え可（assets）。未設定ならハワイの既定写真 */
+const DEF_SRCSET='img/hero-900.jpg 900w, img/hero-1600.jpg 1600w, img/hero-2400.jpg 2400w';
+let assets=null, coverShown='';
+function applyCover(){
+  const id=state.cover&&state.cover.id, img=$('#heroImg'), want=id?'blob:'+id:'default';
+  $('#coverReset').hidden=!id; $('#credit').hidden=!!id;
+  if(want===coverShown) return; coverShown=want;
+  if(id){img.removeAttribute('srcset');img.src='/_blob/'+encodeURIComponent(id)}
+  else{img.setAttribute('srcset',DEF_SRCSET);img.src='img/hero-1600.jpg'}
+}
+async function shrink(file,max,q){
+  let bmp=null; try{bmp=await createImageBitmap(file)}catch(e){return file}
+  const k=Math.min(1,max/Math.max(bmp.width,bmp.height)), c=document.createElement('canvas');
+  c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k); c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',q));
+}
+const coverUsedElsewhere=id=>Object.entries(trips).some(([k,t])=>k!==curId&&t.cover&&t.cover.id===id);
+async function setCover(file){
+  if(!assets||!file) return;
+  if(!/^image\//.test(file.type||'image/')){toast('画像ファイルを選んでください');return}
+  toast('Uploading…');
+  try{
+    const blob=await shrink(file,2200,.84), r=await assets.upload(blob), old=state.cover&&state.cover.id;
+    state.cover={id:r.id}; touch(); toast('Cover updated');
+    if(old&&old!==r.id&&!coverUsedElsewhere(old)) assets.delete(old).catch(()=>{});
+  }catch(e){toast('写真を変更できませんでした')}
+}
+function resetCover(){const old=state.cover&&state.cover.id; state.cover=null; touch(); toast('Default cover'); if(old&&assets&&!coverUsedElsewhere(old)) assets.delete(old).catch(()=>{})}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('on'),2200)}
+function openSheet(){ if(!isMobile()){ $('#q').focus(); return } $('#picker').classList.add('open'); $('#scrim').classList.add('on'); document.body.classList.add('lock'); setTimeout(()=>$('#sheetDone').focus({preventScroll:true}),50) }
+function closeSheet(){ $('#picker').classList.remove('open'); $('#scrim').classList.remove('on'); document.body.classList.remove('lock') }
+
+/* ---------- 保存（旅行ごと） ---------- */
+function setS(t,bad){$$('.sStat').forEach(e=>{e.textContent=t;e.classList.toggle('bad',!!bad)})}
+function setN(html){$$('.nStat').forEach(e=>e.innerHTML=html)}
+function touch(){state.updatedAt=Date.now();renderAll();scheduleSave()}
+function scheduleSave(){trips[curId]=clone(state);lsSet(LS_TRIPS,trips);lsSet(LS_CUR,curId);pend={id:curId,body:clone(state)};clearTimeout(saveTimer);saveTimer=setTimeout(flush,700);setS('Saving…')}
+async function flush(){
+  clearTimeout(saveTimer); saveTimer=null;
+  if(saving){saveTimer=setTimeout(flush,400);return} if(!pend)return;
+  const {id,body}=pend; pend=null; saving=true;
+  try{ if(db){await db.doc('trips/'+id).set(body);setS('Saved')} else setS('この端末に保存') }
+  catch(e){ if(e&&e.code==='unavailable'){pend=pend||{id,body};setTimeout(flush,1500+Math.random()*1000)} else setS(e&&e.code==='quota_exceeded'?'容量がいっぱいです':'保存できませんでした（この端末には保存済み）',true) }
+  finally{ saving=false; if(pend&&!saveTimer) flush() }
+}
+async function switchTrip(id){
+  if(pend) await flush();
+  curId=id; state=migrate(Object.assign(blank(),clone(trips[id]||{}))); sel=null; lsSet(LS_CUR,curId); closeSheet();
+  $('#title').value=state.title||''; location.hash=dates().length?'#plan':'#trip'; renderAll(); route();
+}
+function snapStop(s){return {uid:uid(),id:s.id,url:s.url,title:s.title,lat:s.lat,lng:s.lng,areas:s.areas,cats:s.cats,place:s.place,link:s.link,stay:STAY[s.cats[0]]??60,legMin:null}}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,a'); if(!t) return;
+  if(t.dataset.day){sel=t.dataset.day;renderDays();renderEditor();renderPicker();$('#list').scrollTop=0;
+    const ed=$('#editorWrap'), top=ed.getBoundingClientRect().top, strip=$('#days').offsetHeight; if(top<strip) scrollBy({top:top-strip-8,behavior:'smooth'}); return}
+  if(t.dataset.cat){cat=t.dataset.cat;renderPicker();$('#list').scrollTop=0;return}
+  if(t.dataset.sort){sortMode=t.dataset.sort;lsSet(LS_SORT,sortMode);renderPicker();$('#list').scrollTop=0;return}
+  if(t.dataset.open||t.id==='fab'){openSheet();return}
+  if(t.id==='sheetDone'){closeSheet();return}
+  if(t.classList.contains('coverPick')){$('#coverFile').click();return}
+  if(t.id==='coverReset'){resetCover();return}
+  if(t.dataset.add){const s=spots.find(x=>x.id===t.dataset.add); if(s&&sel){dayOf(sel).stops.push(snapStop(s));touch();
+      const r=computeDay(sel).rows.at(-1); toast(`Added · ${s.title}  ${hm(r.arrive)}`);
+      if(sortMode==='near') $('#list').scrollTop=0;
+      const b=document.querySelector(`[data-add="${cssq(s.id)}"]`); if(b){b.classList.add('just');setTimeout(()=>b.classList.remove('just'),600)}} return}
+  if(t.dataset.retry){loadSpots();return}
+  const act=t.dataset.act, i=+t.dataset.i;
+  if(act&&sel){const st=dayOf(sel).stops;
+    if(act==='up'&&i>0){[st[i-1],st[i]]=[st[i],st[i-1]];touch()}
+    if(act==='down'&&i<st.length-1){[st[i+1],st[i]]=[st[i],st[i+1]];touch()}
+    if(act==='del'){const gone=st.splice(i,1)[0];touch();toast(`Removed · ${gone.title}`)}
+    if(act==='legreset'){st[i].legMin=null;touch()}
+    if(act==='leg'){const body=t.closest('.body'); const cur=computeDay(sel).rows[i].leg; body.innerHTML=`<label style="display:inline-flex;align-items:center;gap:8px">${ICON.car}<input class="inp" type="number" inputmode="numeric" min="0" max="600" step="5" value="${cur}" style="width:6.5em;min-height:42px" id="legIn"> min</label><button data-act="legsave" data-i="${i}">OK</button>`; $('#legIn').focus(); return}
+    if(act==='legsave'){const v=Math.max(0,Math.min(600,Math.round(+$('#legIn').value||0)));st[i].legMin=v;touch()}
+    return}
+  if(t.id==='newTrip'){(async()=>{if(pend)await flush(); closeSheet(); curId='t'+Date.now().toString(36); state=blank(); state.title='New trip'; trips[curId]=clone(state); sel=null; touch(); location.hash='#trip'; route(); const ti=$('#title'); ti.value=state.title; ti.focus(); ti.select()})();return}
+  if(t.id==='done'){finish();return}
+  if(t.id==='resync'){syncNotion();return}
+  if(t.id==='copy'){navigator.clipboard.writeText(asText()).then(()=>{$('#copyMsg').textContent='コピーしました。LINEやメモに貼れます。';toast('Copied')},()=>$('#copyMsg').textContent='コピーできませんでした。');return}
+});
+$('#scrim').addEventListener('click',closeSheet);
+addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#picker').classList.contains('open'))closeSheet()});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='tripSel'){switchTrip(t.value);return}
+  if(t.id==='coverFile'){const f=t.files&&t.files[0]; t.value=''; setCover(f);return}
+  if(t.dataset.act==='stay'&&sel){dayOf(sel).stops[+t.dataset.i].stay=+t.value;touch();return}
+  if(t.id==='start'&&sel){dayOf(sel).start=t.value;touch();return}
+  if(t.id==='d1'||t.id==='d2'){state.startDate=$('#d1').value;state.endDate=$('#d2').value;if(state.endDate&&state.startDate&&state.endDate<state.startDate)state.endDate=state.startDate;touch();return}
+  if(['outNo','outArr','retNo','retDep'].includes(t.id)){state.flights[t.id]=t.value.trim();touch();return}
+  if(t.id==='hotel'){const s=spots.find(x=>x.id===t.value);state.hotel=s?{id:s.id,url:s.url,title:s.title,lat:s.lat,lng:s.lng}:(t.value&&state.hotel?.id===t.value?state.hotel:null);touch();return}
+  if(t.id==='area'){area=t.value;renderPicker();$('#list').scrollTop=0;return}
+});
+$('#title').addEventListener('input',()=>{state.title=$('#title').value;state.updatedAt=Date.now();renderHead();scheduleSave()});
+$('#q').addEventListener('input',()=>{q=$('#q').value;renderPicker()});
+const VIEWS={trip:'#vTrip',plan:'#vPlan',shiori:'#vShiori'}, TABS={trip:'#tTrip',plan:'#tPlan',shiori:'#tShiori'};
+function route(){
+  let v=(location.hash||'').slice(1); if(!VIEWS[v]) v=dates().length?'plan':'trip';
+  for(const k in VIEWS){$(VIEWS[k]).hidden=k!==v; const tab=$(TABS[k]); if(k===v)tab.setAttribute('aria-current','page'); else tab.removeAttribute('aria-current')}
+  document.body.dataset.view=v; if(v!=='plan') closeSheet(); if(v==='shiori') renderShiori();
+}
+addEventListener('hashchange',()=>{route();scrollTo({top:0})});
+
+/* ---------- Notion ---------- */
+function mcpMsg(e){const c=e&&e.code;return ({server_not_connected:'Notionが接続されていません。claude.aiの設定 → コネクタでNotionを追加してください。',needs_reauth:'Notionの接続が切れています。claude.aiの設定 → コネクタで再接続してください。',not_in_manifest:'このページでのNotionの利用が許可されていません。',approval_required:'Notionを使う許可が必要です。',selection_required:'使うNotionコネクタを選んでください。',blocked_by_policy:'組織の設定でNotionが使えません。',server_unavailable:'Notionが一時的に応答しません。少し待ってください。',tool_error:'Notionがエラーを返しました：'+String(e&&e.message||'').slice(0,120)}[c])||`Notionにつながりませんでした（${c||'不明'}）`}
+const pay=r=>{let p=r&&r.payload;if(typeof p==='string'){try{p=JSON.parse(p)}catch(e){}}return p||{}};
+async function loadSpots(){
+  if(!mcp){setN(spots.length?`前回の${spots.length}件を表示中（接続なし）`:'このページからNotionに接続できません');return}
+  setN('スポットを読み込み中…');
+  try{
+    let cursor=null, rows=[];
+    for(let n=0;n<10;n++){const data={mode:'view',view_url:VIEW,page_size:100}; if(cursor) data.start_cursor=cursor;
+      const p=pay(await mcp.callTool('Notion','notion-query-data-sources',{data},{cache:false}));
+      rows.push(...(p.results||[])); if(p.has_more&&p.next_cursor) cursor=p.next_cursor; else break}
+    rows.forEach(r=>Object.keys(r).forEach(k=>{const m=k.match(/^date:(.+):is_datetime$/);if(m)knownProps.add(m[1])}));
+    const seen=new Set();
+    spots=rows.filter(r=>r&&r.url&&r['しおり']!=='__YES__'&&!seen.has(r.url)&&seen.add(r.url)).map(r=>({id:r.url,url:r.url,title:r.Title||'（無題）',place:r['場所']||'',areas:arr(r['エリア']),cats:arr(r['目的']),link:r.Link||'',lat:typeof r['緯度']==='number'?r['緯度']:null,lng:typeof r['経度']==='number'?r['経度']:null}));
+    lsSet(LS_SPOTS,spots);
+    setN(`Notionのスポット${spots.length}件 <button data-retry="1">更新</button>`); renderAll();
+  }catch(e){ setN(`${esc(mcpMsg(e))} <button data-retry="1">再読み込み</button>`) }
+}
+const dt=(date,min)=>{const [y,m,d]=date.split('-').map(Number);const t=new Date(y,m-1,d+Math.floor(min/1440));return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')+'T'+hm(min)+':00'};
+/* 旅行ごとに：日付の列「旅行名」、日ごとにまとめる選択肢の列「旅行名・日」、リスト表示のビュー「旅行名」。
+   時刻はタイムゾーンなしで送ると日本時間として保存され、日本時間の表示でそのままの時刻に見える。 */
+const RESERVED=['Title','日程','場所','エリア','目的','Link','緯度','経度','しおり','優先度'];
+const propName=()=>{let n=String(state.title||'').replace(/["'\\]/g,'').replace(/\s+/g,' ').trim().slice(0,40)||'旅行';if(RESERVED.includes(n))n+='の予定';return n};
+const dayLabel=s=>{const [y,m,d]=s.split('-').map(Number);const w=new Date(y,m-1,d).getDay();return `${y}年${String(m).padStart(2,'0')}月${String(d).padStart(2,'0')}日（${WD[w]}）`};
+const pid=u=>{const m=String(u||'').match(/([0-9a-f]{32})(?:[?#]|$)/i)||String(u||'').match(/([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})/i);return m?m[1]:u};
+function plan(){
+  const list=dates(), f=state.flights, spotT=new Map(), extras=[], seen=new Map();
+  const AIR={cats:['移動🚗'],areas:['パールハーバー・中央部'],place:'Daniel K. Inouye International Airport (HNL)',icon:'✈️',link:''};
+  list.forEach(d=>{const c=computeDay(d);
+    if(c.first&&c.arr!=null) extras.push({key:'flight-out',title:`✈️ ${f.outNo||'行きの便'} ホノルル着`,date:d,s:c.arr,e:c.arr,...AIR});
+    c.rows.forEach(r=>{const n=(seen.get(r.s.id)||0)+1; seen.set(r.s.id,n);
+      if(n===1) spotT.set(r.s.id,{url:r.s.url,title:r.s.title,date:d,s:r.arrive,e:r.depart});
+      else extras.push({key:'dup-'+r.s.uid,title:`${r.s.title}（${n}回目）`,date:d,s:r.arrive,e:r.depart,cats:r.s.cats||[],areas:r.s.areas||[],place:r.s.place||'',link:safeUrl(r.s.link),icon:emojiOf(r.s.cats)})});
+    if(c.last&&c.dep!=null) extras.push({key:'flight-ret',title:`✈️ ${f.retNo||'帰りの便'} ホノルル発`,date:d,s:c.dep,e:c.dep,...AIR});
+  });
+  const h=state.hotel;
+  if(h&&h.url&&list.length){
+    const c1=computeDay(list[0]), cL=computeDay(list[list.length-1]);
+    const ci=(c1.end&&c1.end.place.id===h.id)?c1.end.arrive:15*60;
+    const co=(list.length-1)*1440+((list.length>1&&cL.origin&&cL.origin.id===h.id)?cL.start:11*60);
+    const stay={url:h.url,title:h.title,date:list[0],s:ci,e:Math.max(ci,co)};
+    if(!spotT.has(h.id)) spotT.set(h.id,stay); else extras.push({key:'hotel-stay',title:`${h.title}（宿泊）`,...stay,cats:['ホテル🏨'],areas:[],place:'',link:'',icon:'🏨'});
+  }
+  return {spotT,extras};
+}
+function dateProps(P,D,e,clearEnd){const p={[`date:${P}:start`]:dt(e.date,e.s),[`date:${P}:is_datetime`]:1,[D]:dayLabel(dt(e.date,e.s).slice(0,10))};
+  if(e.e>e.s)p[`date:${P}:end`]=dt(e.date,e.e); else if(clearEnd)p[`date:${P}:end`]=null; return p}
+const clearProps=(P,D)=>({[`date:${P}:start`]:null,[`date:${P}:end`]:null,[`date:${P}:is_datetime`]:null,[D]:null});
+const sigOf=e=>JSON.stringify([dt(e.date,e.s),e.e>e.s?dt(e.date,e.e):'',dayLabel(dt(e.date,e.s).slice(0,10))]);
+const sigX=e=>JSON.stringify([e.title,sigOf(e),e.place,e.link||'']);
+function extraProps(P,D,e,upd){const p={Title:e.title,'しおり':'__YES__','場所':e.place||'','エリア':JSON.stringify(e.areas||[]),'目的':JSON.stringify(e.cats||[]),...dateProps(P,D,e,upd)}; if(e.link)p.Link=e.link; else if(upd)p.Link=null; return p}
+const extraBody=e=>`> 🗓 ${dlong(e.date)} ${hm(e.s)}${e.e>e.s?'〜'+hm(e.e):''}\n\n<i>旅行プランナーが作成した予定です（スポット一覧には出ません）。</i>`;
+async function ensureColumns(call){
+  let want=propName();
+  const others=new Set(Object.entries(trips).filter(([id])=>id!==curId).map(([,t])=>t.notionProp).filter(Boolean));
+  if(others.has(want)) want+='（2）';
+  const had=state.notionProp, D=want+'・日', hadD=state.dayProp;
+  const addCol=async()=>{ try{ await call('notion-update-data-source',{data_source_id:DS,statements:`ADD COLUMN "${want}" DATE COMMENT '旅行プランナーが書き込む日程'`}) }catch(e){ if(!(e&&e.code==='tool_error')) throw e } };
+  if(had&&had!==want){ try{ await call('notion-update-data-source',{data_source_id:DS,statements:`RENAME COLUMN "${had}" TO "${want}"`}); knownProps.delete(had) }catch(e){ if(e&&e.code==='tool_error') await addCol(); else throw e } }
+  else if(!knownProps.has(want)) await addCol();
+  knownProps.add(want);
+  state.notionProp=want;
+  if(hadD&&hadD!==D){ try{ await call('notion-update-data-source',{data_source_id:DS,statements:`RENAME COLUMN "${hadD}" TO "${D}"`}) }catch(e){ if(!(e&&e.code==='tool_error')) throw e } }
+  const labels=dates().map(dayLabel), lsig=JSON.stringify(labels);
+  if(!hadD||state.dayOptsSig!==lsig){ const opts=labels.map(l=>`'${l}':blue`).join(', ');
+    try{ await call('notion-update-data-source',{data_source_id:DS,statements:`ALTER COLUMN "${D}" SET SELECT(${opts})`}) }
+    catch(e){ if(e&&e.code==='tool_error') await call('notion-update-data-source',{data_source_id:DS,statements:`ADD COLUMN "${D}" SELECT(${opts}) COMMENT '旅行プランナー：日ごとにまとめる用'`}); else throw e } }
+  state.dayProp=D; state.dayOptsSig=lsig;
+  const cfg=`FILTER "${want}" IS NOT EMPTY; GROUP BY "${D}" HIDE EMPTY; SORT BY "${want}" ASC; SHOW "Title", "${want}"; ICON "🌺"`;
+  if(state.viewId&&state.viewProp!==want){ try{ await call('notion-update-view',{view_id:state.viewId,name:want,configure:'CLEAR FILTER; CLEAR SORT; '+cfg}) }catch(e){ if(e&&e.code==='tool_error') state.viewId=null; else throw e } }
+  if(!state.viewId){ const p=pay(await call('notion-create-view',{database_id:DBID,data_source_id:DS,name:want,type:'list',configure:cfg})); const m=JSON.stringify(p).match(/view:\/\/([0-9a-f-]{36})/); state.viewId=m?'view://'+m[1]:null }
+  state.viewProp=want; scheduleSave(); return {P:want,D};
+}
+let pendingDelete=[];
+async function syncNotion(){
+  const say=(t,bad)=>{for(const x of [$('#syncMsg'),$('#copyMsg')]) if(x){x.textContent=t;x.className='msg'+(bad?' bad':'')}};
+  if(syncing) return; if(!mcp){say('Notionにつながらないため、しおりだけ保存しました。');return}
+  syncing=true; const call=(tool,input)=>mcp.callTool('Notion',tool,input);
+  try{
+    say('Notionの列とビューを準備中…');
+    const {P,D}=await ensureColumns(call);
+    const {spotT,extras}=plan();
+    const set=state.notionSet||(state.notionSet={}), map=state.notionMap||(state.notionMap={});
+    const ups=[...spotT.entries()].filter(([id,e])=>!set[id]||set[id].h!==sigOf(e)||set[id].p!==P);
+    const clears=Object.keys(set).filter(id=>!spotT.has(id));
+    const creates=extras.filter(e=>!map[e.key]), exUps=extras.filter(e=>map[e.key]&&map[e.key].h!==sigX(e));
+    const total=ups.length+clears.length+creates.length+exUps.length; let done=0; const step=()=>{done++;say(`Notionに反映中… ${done}/${total}`)};
+    for(const [id,e] of ups){await call('notion-update-page',{page_id:pid(e.url||id),command:'update_properties',properties:dateProps(P,D,e,true)}); set[id]={h:sigOf(e),t:e.title,u:e.url,p:P,d:D}; step(); scheduleSave()}
+    for(const id of clears){const x=set[id]; await call('notion-update-page',{page_id:pid(x.u||id),command:'update_properties',properties:clearProps(x.p||P,x.d||D)}); delete set[id]; step(); scheduleSave()}
+    for(let i=0;i<creates.length;i+=20){const part=creates.slice(i,i+20);
+      const p=pay(await call('notion-create-pages',{parent:{type:'data_source_id',data_source_id:DS},pages:part.map(e=>({properties:extraProps(P,D,e,false),icon:e.icon,content:extraBody(e)}))}));
+      (p.pages||[]).forEach((pg,k)=>{if(pg&&pg.id&&part[k])map[part[k].key]={id:pg.id,h:sigX(part[k]),t:part[k].title}}); part.forEach(step); scheduleSave()}
+    for(const e of exUps){await call('notion-update-page',{page_id:map[e.key].id,command:'update_properties',properties:extraProps(P,D,e,true),icon:e.icon}); map[e.key].h=sigX(e); map[e.key].t=e.title; step(); scheduleSave()}
+    const keys=new Set(extras.map(e=>e.key));
+    pendingDelete=[...Object.keys(map).filter(k=>!keys.has(k)).map(k=>({k,id:map[k].id,t:map[k].t})),...(state.legacy||[]).map(x=>({legacy:true,id:x.id,t:x.t}))];
+    if(pendingDelete.length){$('#mList').innerHTML=pendingDelete.map(x=>`<li>${esc(x.t||'（名前なしの予定）')}${x.legacy?'（前の方式で作ったページ）':''}</li>`).join('');$('#modal').hidden=false;$('#mYes').focus()}
+    say(`Notionのビュー「${P}」に反映しました（スポット${spotT.size}件${extras.length?`・その他${extras.length}件`:''}）。`); toast('Synced to Notion');
+  }catch(e){ say(`途中で止まりました：${mcpMsg(e)}　もう一度押すと続きから反映します。`,true) }
+  finally{ syncing=false; touch() }
+}
+async function closeModal(del){
+  $('#modal').hidden=true; const map=state.notionMap||{}; const ids=pendingDelete.map(x=>x.id).filter(Boolean);
+  const forget=()=>{pendingDelete.forEach(x=>{if(x.k)delete map[x.k]}); const gone=new Set(pendingDelete.filter(x=>x.legacy).map(x=>x.id)); state.legacy=(state.legacy||[]).filter(x=>!gone.has(x.id))};
+  if(del&&ids.length&&mcp){try{for(let i=0;i<ids.length;i+=20) await mcp.callTool('Notion','notion-delete-pages',{page_ids:ids.slice(i,i+20),user_confirmed:true}); forget(); toast('Moved to Notion trash')}
+    catch(e){toast('ゴミ箱に移せませんでした')}}
+  else forget();
+  pendingDelete=[]; touch();
+}
+$('#mYes').addEventListener('click',()=>closeModal(true)); $('#mNo').addEventListener('click',()=>closeModal(false));
+function finish(){
+  const m=$('#syncMsg'); const bad=t=>{m.textContent=t;m.className='msg bad'};
+  if(!String(state.title||'').trim()){bad('先にTripタブで旅行名を入れてください（Notionのビュー名になります）。');return}
+  if(!dates().length){bad('先にTripタブで出発日と帰国日を入れてください。');return}
+  if(!dates().some(d=>(state.days[d]?.stops||[]).length)){bad('どこか1か所は予定を入れてください。');return}
+  state.finalizedAt=Date.now(); touch(); location.hash='#shiori'; syncNotion();
+}
+
+/* ---------- 起動 ---------- */
+renderAll(); route();
+(async()=>{
+  try{ db=await claude.use('db') }catch(e){ db=null }
+  if(!db){ setS('この端末に保存'); return }
+  setS('Loading…');
+  loadTimer=setTimeout(()=>setS('サーバーにつながりません（この端末に保存中）',true),10000);
+  db.collection('trips').onSnapshot(qs=>{ clearTimeout(loadTimer); if(qs.metadata.hasPendingWrites) return;
+    let changed=false;
+    qs.docs.forEach(doc=>{ const d=doc.data(); if(!d) return;
+      if(d.deleted){ /* 削除済みの旅行 */
+        if(trips[doc.id]){ delete trips[doc.id]; changed=true }
+        if(doc.id===curId&&!pend&&!saving&&(state.updatedAt||0)<=(d.updatedAt||0)){ state=blank(); sel=null; changed=true }
+        return }
+      const local=doc.id===curId?state:trips[doc.id];
+      if(doc.id===curId&&(pend||saving)) return;
+      if(!local||(d.updatedAt||0)>(local.updatedAt||0)){ trips[doc.id]=clone(d); if(doc.id===curId){state=migrate(Object.assign(blank(),clone(d)))} changed=true }
     });
-    await save();
-  }catch(e){/* 推定値のまま */}
-  S.travelBusy=false;render();
+    if(qs.metadata.fromCache){ if(changed){renderAll();route()} return }
+    if(!qs.docs.some(d=>d.id===curId)&&state.updatedAt) scheduleSave();
+    const live=qs.docs.filter(x=>{const v=x.data();return v&&!v.deleted});
+    if(!trips[curId]&&live.length){const best=live.map(d=>d.id).sort((a,b)=>(trips[b].updatedAt||0)-(trips[a].updatedAt||0))[0]; curId=best; state=migrate(Object.assign(blank(),clone(trips[best]))); changed=true}
+    lsSet(LS_TRIPS,trips); setS('Saved'); if(changed){renderAll();route()}
+  },err=>{clearTimeout(loadTimer);db=null;setS('サーバーに保存できません（この端末に保存）',true)});
+})();
+(async()=>{ try{ mcp=await claude.use('mcp') }catch(e){ mcp=null } loadSpots() })();
+(async()=>{ try{ assets=await claude.use('assets') }catch(e){ assets=null } $$('.coverPick').forEach(b=>b.hidden=!assets); $('.coverRow').hidden=!assets })();
 }
-async function setTravel(i,v){
-  const it=dayObj(trip(S.tripId),S.dayKey).items[i];
-  it.tMin=Math.max(0,parseInt(v)||0);it.tSrc="manual";
-  render();await save();
-}
-function coordsFromUrl(u){
-  /* data=内に複数の!3d!4dがある場合、最後のペアが実際に選択した場所 */
-  const all=[...u.matchAll(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g)];
-  if(all.length){const m=all[all.length-1];return{lat:+m[1],lng:+m[2]}}
-  let m=u.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
-  m=u.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);if(m)return{lat:+m[1],lng:+m[2]};
-  return null;
-}
-function nameFromUrl(u){
-  let m=u.match(/\/place\/([^\/@?]+)/)||u.match(/\/maps\/search\/([^\/@?]+)/);
-  if(!m){
-    const m2=u.match(/[?&](?:q|query)=([^&]+)/);
-    if(m2&&!/^-?\d+\.\d+(?:,|%2C)/i.test(m2[1]))m=m2;
-  }
-  if(!m)return null;
-  let s=m[1];
-  try{s=decodeURIComponent(s)}catch(e){}
-  s=s.replace(/\+/g," ").trim();
-  return s||null;
-}
-function isShortMapUrl(u){return /(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/.test(u)}
-function mapLink(p){
-  if(p.mapUrl)return p.mapUrl;
-  if(p.lat!=null&&p.lng!=null)return"https://www.google.com/maps?q="+p.lat+","+p.lng;
-  return"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.name);
-}
-
-/* ============ Claude API ============ */
-async function askClaude(prompt,useSearch,maxTok){
-  const body={model:"claude-sonnet-4-6",max_tokens:maxTok||2500,messages:[{role:"user",content:prompt}]};
-  if(useSearch)body.tools=[{type:"web_search_20250305",name:"web_search"}];
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)
-  });
-  const data=await res.json();
-  if(data.error)throw new Error(data.error.message||"API error");
-  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
-  if(!text)throw new Error("empty response");
-  return text;
-}
-function pickJSON(t){
-  const c=t.replace(/```json|```/g,"").trim();
-  const s=c.indexOf("{"),e=c.lastIndexOf("}");
-  if(s<0||e<0)throw new Error("no json");
-  return JSON.parse(c.slice(s,e+1));
-}
-function pickJSONArr(t){
-  const c=t.replace(/```json|```/g,"").trim();
-  const s=c.indexOf("["),e=c.lastIndexOf("]");
-  if(s<0||e<0)throw new Error("no json");
-  return JSON.parse(c.slice(s,e+1));
-}
-
-/* ============ navigation ============ */
-function go(view,arg){
-  S.view=view;
-  if(view==="city"){S.cityId=arg;S.filter="all";S.near=false;}
-  if(view==="trip"){S.tripId=arg;const t=trip(arg);S.dayKey=t?daysBetween(t.start,t.end)[0]:null;}
-  document.querySelector("#tab-places").classList.toggle("on",["cities","city"].includes(view));
-  document.querySelector("#tab-trips").classList.toggle("on",["trips","trip"].includes(view));
-  render();
-  window.scrollTo(0,0);
-}
-function render(){
-  const m=$("#main");
-  let h="";
-  if(S.view==="cities")h=vCities();
-  else if(S.view==="city")h=vCity();
-  else if(S.view==="trips")h=vTrips();
-  else if(S.view==="trip")h=vTrip();
-  m.innerHTML=`<div class="view">${h}</div>`;
-}
-</script>
-<script>
-/* ============ VIEW: cities ============ */
-function vCities(){
-  const rows=D.cities.map(c=>{
-    const n=D.places.filter(p=>p.cityId===c.id).length;
-    return `<button class="city-item" onclick="go('city','${c.id}')">
-      <h3>${esc(c.name)}</h3>
-      <span class="cnt">${n} PLACES</span><span class="arw">→</span>
-    </button>`;
-  }).join("");
-  const empty=D.cities.length===0?`<div class="empty"><div class="mark">旅</div><p>まずは旅する都市を登録しましょう。<br>ハワイ、バンコク、パリ——どこへ行く?</p></div>`:"";
-  return `<div class="eyebrow">Destinations</div><h1 class="page">旅の目的地</h1>
-    ${rows}
-    <button class="addline" onclick="mAddCity()"><span class="pl">＋</span>ADD CITY ／ 都市を追加</button>
-    ${empty}`;
-}
-function mAddCity(){
-  sheet(`<div class="sheet-head"><h3>都市を追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <div class="field"><label>CITY NAME ／ 都市の名前</label><input type="text" id="f-city" placeholder="例: ハワイ / バンコク / 京都"></div>
-    <button class="btn accent wfull" onclick="addCity()">この都市のページをつくる</button>`);
-  $("#f-city").focus();
-}
-async function addCity(){
-  const name=$("#f-city").value.trim();
-  if(!name)return toast("都市名を入力してください");
-  D.cities.push({id:uid(),name});
-  closeSheet();render();await save();toast("「"+name+"」のページができました");
-}
-
-/* ============ VIEW: city ============ */
-function vCity(){
-  const c=city(S.cityId);if(!c)return vCities();
-  let list=D.places.filter(p=>p.cityId===c.id);
-  if(S.filter!=="all")list=list.filter(p=>p.genre===S.filter);
-  if(S.near&&S.userPos){
-    list=list.slice().sort((a,b)=>{
-      const da=a.lat!=null?haversine(S.userPos,a):1e9;
-      const db=b.lat!=null?haversine(S.userPos,b):1e9;
-      return da-db;
-    });
-  }
-  const chips=['all',...allGenres()].map(g=>
-    `<button class="chip ${S.filter===g?'on':''}" onclick="S.filter='${g}';render()">${g==='all'?'ALL':g}</button>`).join("");
-  const cards=list.map(p=>{
-    const dist=(S.near&&S.userPos&&p.lat!=null)?`<span class="dist-chip">${fmtKm(haversine(S.userPos,p))}</span>`:"";
-    return `<div class="place-card">
-      <div class="pc-top">
-        <span class="gtag" style="--gc:${genreColor(p.genre)}"><span class="gd"></span>${esc(p.genre)}</span>
-        ${dist}
-      </div>
-      <h4>${esc(p.name)}</h4>
-      ${p.summary?`<p class="summary">${esc(p.summary)}</p>`:""}
-      <div class="pc-foot">
-        <a href="${esc(mapLink(p))}" target="_blank" rel="noopener">MAP ↗</a>
-        <button class="xbtn" onclick="delPlace('${p.id}')" aria-label="削除">✕</button>
-      </div>
-    </div>`;
-  }).join("");
-  const empty=list.length===0?`<div class="empty"><div class="mark">地</div><p>気になる場所を集めていきましょう。<br>Google Mapのリストからの一括登録もできます。</p></div>`:"";
-  const nearNote=S.near?`<div class="near-note">SORTED BY DISTANCE — 現在地から近い順</div>`:"";
-  return `<button class="back" onclick="go('cities')">← INDEX</button>
-    <div class="eyebrow">City Guide</div>
-    <h1 class="page">${esc(c.name)}</h1>
-    <div class="toolbar">
-      <button class="btn accent" onclick="mAddPlace()">＋ 行き先を追加</button>
-      <button class="btn ghost" onclick="toggleNear()">${S.near?"並びを戻す":"近い順に並べる"}</button>
-    </div>
-    <div class="chips">${chips}</div>
-    ${nearNote}${cards}${empty}`;
-}
-async function delPlace(id){
-  if(!confirm("この行き先を削除しますか?"))return;
-  D.places=D.places.filter(p=>p.id!==id);
-  render();await save();
-}
-function toggleNear(){
-  if(S.near){S.near=false;render();return;}
-  if(!navigator.geolocation)return toast("この端末では位置情報を利用できません");
-  toast("現在地を取得中…");
-  navigator.geolocation.getCurrentPosition(pos=>{
-    S.userPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    S.near=true;render();
-  },()=>toast("位置情報を取得できませんでした"),{enableHighAccuracy:true,timeout:10000});
-}
-
-/* ============ add place: single AI / bulk / manual ============ */
-let aiDraft=null;
-function mAddPlace(){
-  aiDraft=null;
-  sheet(`<div class="sheet-head"><h3>行き先を追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <div class="seg">
-      <button id="seg-ai" class="on" onclick="segPlace('ai')">1件ずつ</button>
-      <button id="seg-bulk" onclick="segPlace('bulk')">リスト一括</button>
-      <button id="seg-manual" onclick="segPlace('manual')">手入力</button>
-    </div>
-    <div id="pane-ai">
-      <div class="field"><label>PLACE ／ 場所の名前 or Google MapのURL</label>
-        <textarea id="f-q" placeholder="例: マリウカイ マーケット&#10;例: https://www.google.com/maps/place/…" oninput="qHint()"></textarea>
-        <div class="hint" id="q-hint">名前かリンクだけで、ジャンルと紹介文をAIがまとめます。</div>
-      </div>
-      <div class="field" id="q-name-wrap" style="display:none"><label>NAME ／ 場所の名前(URLと一緒に入れると精度UP)</label>
-        <input type="text" id="f-qname" placeholder="例: Leonard's Bakery"></div>
-      <button class="btn wfull" id="ai-go" onclick="aiLookup()">調べてまとめる</button>
-      <div id="ai-out"></div>
-    </div>
-    <div id="pane-bulk" style="display:none">
-      <div class="field"><label>PLACES ／ 場所の名前を1行ずつ貼り付け</label>
-        <textarea id="f-bulk" style="min-height:130px" placeholder="レナーズ ベーカリー&#10;ダイヤモンドヘッド&#10;アラモアナセンター&#10;Waikiki Beach&#10;…" oninput="bulkHint()"></textarea>
-        <div class="hint" id="bulk-hint">Google Mapの保存リストを開いて場所名をコピーし、ここに貼り付けてください。まとめてAIが調査し、ジャンル・紹介文付きで一括登録します。</div>
-      </div>
-      <button class="btn wfull" id="bulk-go" onclick="bulkLookup()">まとめて調べる</button>
-      <div id="bulk-out"></div>
-    </div>
-    <div id="pane-manual" style="display:none">
-      ${placeForm({},"m-")}
-      <button class="btn accent wfull" onclick="submitManual()">この行き先を登録</button>
-    </div>`);
-}
-function segPlace(k){
-  ["ai","bulk","manual"].forEach(x=>{
-    $("#seg-"+x).classList.toggle("on",x===k);
-    $("#pane-"+x).style.display=x===k?"":"none";
-  });
-}
-function placeForm(v,px){
-  px=px||"";
-  return `
-    <div class="field"><label>TITLE ／ 場所の名前</label><input type="text" id="${px}f-name" value="${esc(v.name||"")}"></div>
-    <div class="field"><label>GENRE ／ ジャンル</label><select id="${px}f-genre" data-prev="${esc(v.genre||GENRES[0])}" onchange="genreSel(this)">${genreOptions(v.genre)}</select></div>
-    <div class="field"><label>SUMMARY ／ 説明の要約</label><textarea id="${px}f-summary">${esc(v.summary||"")}</textarea></div>
-    <div class="field"><label>GOOGLE MAP URL(任意)</label><input type="text" id="${px}f-url" value="${esc(v.mapUrl||"")}"></div>`;
-}
-function qHint(){
-  const q=$("#f-q").value.trim();
-  const isUrl=/^https?:\/\//.test(q);
-  $("#q-name-wrap").style.display=isUrl?"":"none";
-  const h=$("#q-hint");
-  if(isShortMapUrl(q)){
-    h.innerHTML="⚠️ <b>短縮URLには場所の情報が含まれていません。</b>下の欄に場所の名前も入力してください。";
-    h.style.color="var(--g-food)";
-  }else{
-    h.textContent="名前かリンクだけで、ジャンルと紹介文をAIがまとめます。";
-    h.style.color="";
-  }
-}
-async function aiLookup(){
-  const q=$("#f-q").value.trim();
-  const extra=($("#f-qname")?$("#f-qname").value.trim():"");
-  if(!q)return toast("場所の名前かURLを入力してください");
-  const isUrl=/^https?:\/\//.test(q);
-  const coords=coordsFromUrl(q);
-  const hintName=nameFromUrl(q);
-  if(isUrl&&isShortMapUrl(q)&&!extra&&!hintName){
-    qHint();toast("短縮URLのため、場所の名前も入力してください");
-    $("#f-qname").focus();return;
-  }
-  const btn=$("#ai-go");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> 調べています…`;
-  $("#ai-out").innerHTML="";
-  const c=city(S.cityId);
-  const clue=[extra||null,hintName?("URLから読み取れた名前: "+hintName):null,
-    coords?("URLから読み取れた座標: "+coords.lat+","+coords.lng):null,
-    isUrl?null:q].filter(Boolean).join(" / ")||q.slice(0,300);
-  const fmt=`出力フォーマット(JSON以外の文字・前置き・コードブロック記号は一切出力しない):
-{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"その場所の概要を日本語で120字程度。何の店/スポットか、名物・見どころ・特徴、どんな人におすすめかを具体的に。創業年や受賞歴など事実があれば含める。","lat":緯度の数値または null,"lng":経度の数値または null}`;
-  try{
-    let j;
-    try{
-      /* 第1段: ウェブ検索あり */
-      const text=await askClaude(`あなたは旅行ガイドブックの編集者です。次の場所についてウェブ検索で調べて、指定のJSONだけで回答してください。
-場所の手がかり: ${clue}
-訪問予定の都市: ${c?c.name:"不明"}
-注意: URLそのものを開くことはできないため、名前や座標を手がかりに検索すること。検索がうまくいかない場合も、必ずJSONで回答すること。
-
-${fmt}`,true);
-      j=pickJSON(text);
-    }catch(e1){
-      /* 第2段: 検索なし・知識ベースで再試行 */
-      const text=await askClaude(`あなたは旅行ガイドブックの編集者です。ウェブ検索は使わず、あなたの知識に基づいて次の場所の情報をまとめ、指定のJSONだけで回答してください。確信が持てない項目は無理をせず、summaryは一般的な範囲の説明で構いません。
-場所の手がかり: ${clue}
-訪問予定の都市: ${c?c.name:"不明"}
-
-${fmt}`,false);
-      j=pickJSON(text);
-    }
-    aiDraft={
-      name:j.name||extra||hintName||q,
-      genre:allGenres().includes(j.genre)?j.genre:"観光",
-      summary:j.summary||"",
-      lat:coords?coords.lat:(typeof j.lat==="number"?j.lat:null),
-      lng:coords?coords.lng:(typeof j.lng==="number"?j.lng:null),
-      mapUrl:isUrl?q:""
-    };
-    $("#ai-out").innerHTML=`<div class="ai-result"><div class="lbl">FOUND — 内容を確認して登録</div>
-      ${placeForm(aiDraft)}
-      <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
-  }catch(err){
-    let reason=err.message||"不明";
-    if(/fetch|network|load failed/i.test(reason)){
-      reason="AIへの通信ができませんでした。ダウンロードしたHTMLをブラウザで直接開いている場合、AI機能とデータ保存はClaude上のプレビューでのみ動作します";
-    }
-    const fallbackName=extra||hintName;
-    aiDraft={name:fallbackName||"",genre:"観光",summary:"",
-      lat:coords?coords.lat:null,lng:coords?coords.lng:null,mapUrl:isUrl?q:""};
-    $("#ai-out").innerHTML=`<div class="ai-result"><div class="lbl err">NOT FOUND — うまく調べられませんでした</div>
-      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">理由: ${esc(reason)}<br>下のフォームを埋めれば、このまま登録できます。</p>
-      ${placeForm(aiDraft)}
-      <button class="btn accent wfull" onclick="submitAI()">この内容で登録</button></div>`;
-  }
-  btn.disabled=false;btn.textContent="調べてまとめる";
-}
-async function submitAI(){
-  const p=readPlaceForm("");
-  if(!p.name)return toast("名前を入力してください");
-  p.lat=aiDraft?aiDraft.lat:null;p.lng=aiDraft?aiDraft.lng:null;
-  await pushPlace(p);
-}
-async function submitManual(){
-  const p=readPlaceForm("m-");
-  if(!p.name)return toast("名前を入力してください");
-  const c=p.mapUrl?coordsFromUrl(p.mapUrl):null;
-  if(c){p.lat=c.lat;p.lng=c.lng;}
-  await pushPlace(p);
-}
-function readPlaceForm(px){
-  px=px||"";
-  return{name:$("#"+px+"f-name").value.trim(),genre:$("#"+px+"f-genre").value,
-    summary:$("#"+px+"f-summary").value.trim(),mapUrl:$("#"+px+"f-url").value.trim(),lat:null,lng:null};
-}
-async function pushPlace(p){
-  D.places.push({id:uid(),cityId:S.cityId,...p});
-  closeSheet();render();await save();toast("「"+p.name+"」を追加しました");
-}
-
-/* ---- bulk import ---- */
-let bulkResults=[];
-function bulkHint(){
-  const v=$("#f-bulk").value;
-  const h=$("#bulk-hint");
-  if(isShortMapUrl(v)){
-    h.innerHTML=`⚠️ <b>リストの共有URL(maps.app.goo.gl)から中身を読み取ることはできません。</b><br>
-      かわりに: Google Mapでリストを開く → 各場所の名前をコピー → ここに1行ずつ貼り付け、で一括登録できます。`;
-    h.style.color="var(--g-food)";
-  }else{
-    const n=parseBulkLines(v).length;
-    h.textContent=n?`${n}件の場所を読み取りました。「まとめて調べる」でAIが一括調査します。`:"Google Mapの保存リストを開いて場所名をコピーし、ここに貼り付けてください。まとめてAIが調査し、ジャンル・紹介文付きで一括登録します。";
-    h.style.color=n?"var(--accent)":"";
-  }
-}
-function parseBulkLines(v){
-  const seen=new Set();
-  return v.split(/\n+/)
-    .map(l=>l.replace(/^[\s・•\-–—\d.．)）]+/,"").trim())
-    .filter(l=>l&&!/^https?:\/\//.test(l)&&l.length<=60)
-    .filter(l=>{const k=l.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;})
-    .slice(0,40);
-}
-async function bulkLookup(){
-  const raw=$("#f-bulk").value;
-  if(isShortMapUrl(raw)&&parseBulkLines(raw).length===0){bulkHint();return toast("URLではなく場所名を貼り付けてください");}
-  const names=parseBulkLines(raw);
-  if(!names.length)return toast("場所名を1行ずつ入力してください");
-  const btn=$("#bulk-go");btn.disabled=true;
-  const c=city(S.cityId);
-  const CHUNK=5;
-  const chunks=[];
-  for(let i=0;i<names.length;i+=CHUNK)chunks.push(names.slice(i,i+CHUNK));
-  bulkResults=[];
-  $("#bulk-out").innerHTML=`<div class="prog"><div class="prog-bar"><i id="pg-bar" style="width:2%"></i></div>
-    <div class="prog-txt" id="pg-txt">RESEARCHING 0 / ${names.length}</div></div><div id="bulk-list"></div>`;
-  let done=0;
-  for(const chunk of chunks){
-    try{
-      const prompt=`あなたは旅行ガイドブックの編集者です。以下の${chunk.length}件の場所についてウェブ検索で調べて、指定のJSON配列だけで回答してください。
-訪問予定の都市: ${c?c.name:"不明"}
-場所リスト:
-${chunk.map((n,i)=>(i+1)+". "+n).join("\n")}
-
-出力フォーマット(JSON配列以外の文字・前置き・コードブロック記号は一切出力しない。必ず${chunk.length}件、入力と同じ順序で):
-[{"name":"場所の正式名称(日本語表記があれば日本語)","genre":"${allGenres().join("/")} のいずれか1つ","summary":"概要を日本語で100字程度。何の店/スポットか、名物・見どころ・特徴を具体的に。","lat":緯度の数値または null,"lng":経度の数値または null}]`;
-      const text=await askClaude(prompt,true,4000);
-      const arr=pickJSONArr(text);
-      chunk.forEach((nm,i)=>{
-        const j=arr[i]||{};
-        bulkResults.push({ok:true,input:nm,
-          name:j.name||nm,genre:allGenres().includes(j.genre)?j.genre:"観光",
-          summary:j.summary||"",lat:typeof j.lat==="number"?j.lat:null,lng:typeof j.lng==="number"?j.lng:null});
-      });
-    }catch(e){
-      chunk.forEach(nm=>bulkResults.push({ok:false,input:nm,name:nm,genre:"観光",summary:"",lat:null,lng:null}));
-    }
-    done+=chunk.length;
-    const bar=$("#pg-bar"),txt=$("#pg-txt");
-    if(bar)bar.style.width=Math.round(done/names.length*100)+"%";
-    if(txt)txt.textContent=`RESEARCHING ${done} / ${names.length}`;
-    renderBulkList();
-  }
-  const txt=$("#pg-txt");if(txt)txt.textContent=`DONE — ${bulkResults.length}件の調査が完了`;
-  const listEl=$("#bulk-out");
-  if(listEl)listEl.insertAdjacentHTML("beforeend",
-    `<button class="btn accent wfull" style="margin-top:10px" onclick="applyBulk()">チェックした場所をまとめて登録</button>`);
-  btn.disabled=false;
-}
-function renderBulkList(){
-  const el=$("#bulk-list");if(!el)return;
-  el.innerHTML=bulkResults.map((r,i)=>`
-    <label class="bulk-item ${r.ok?"":"fail"}">
-      <input type="checkbox" data-bi="${i}" ${r.ok?"checked":""}>
-      <span class="bi">
-        <span class="n">${esc(r.name)}</span>
-        ${r.summary?`<div class="s">${esc(r.summary)}</div>`:`<div class="s">情報が見つかりませんでした(名前のみで登録できます)</div>`}
-        <div class="g">${esc(r.genre)}</div>
-      </span>
-    </label>`).join("");
-}
-async function applyBulk(){
-  const checked=[...document.querySelectorAll("[data-bi]:checked")].map(ch=>bulkResults[+ch.dataset.bi]);
-  if(!checked.length)return toast("登録する場所を選んでください");
-  checked.forEach(r=>{
-    D.places.push({id:uid(),cityId:S.cityId,name:r.name,genre:r.genre,summary:r.summary,lat:r.lat,lng:r.lng,mapUrl:""});
-  });
-  closeSheet();render();await save();
-  toast(checked.length+"件の行き先を一括登録しました");
-}
-
-/* ============ VIEW: trips ============ */
-function vTrips(){
-  const cards=D.trips.map(t=>{
-    const s=new Date(t.start+"T00:00:00"),e=new Date(t.end+"T00:00:00");
-    const fl=(t.flights||[]).map(f=>f.flightNo).join(" / ");
-    return `<button class="trip-card" onclick="go('trip','${t.id}')">
-      <div class="trip-stub">
-        <span class="mo">${String(s.getMonth()+1).padStart(2,"0")}月</span><span class="dd">${s.getDate()}</span>
-        <span class="dv">|</span>
-        <span class="mo">${String(e.getMonth()+1).padStart(2,"0")}月</span><span class="dd">${e.getDate()}</span>
-      </div>
-      <div class="trip-body">
-        <h3>${esc(t.name)}</h3>
-        <div class="meta">${fmtD(t.start)} — ${fmtD(t.end)} ・ ${daysBetween(t.start,t.end).length} DAYS</div>
-        ${fl?`<div class="fmini">✈ ${esc(fl)}</div>`:""}
-      </div>
-    </button>`;
-  }).join("");
-  const empty=D.trips.length===0?`<div class="empty"><div class="mark">程</div><p>新しい旅の計画をはじめましょう。<br>日付を決めれば、しおり作りのスタートです。</p></div>`:"";
-  return `<div class="eyebrow">Itineraries</div><h1 class="page">旅程</h1>
-    <button class="btn accent wfull" style="margin-bottom:20px" onclick="mAddTrip()">＋ 新しい旅をつくる</button>
-    ${cards}${empty}`;
-}
-function mAddTrip(){
-  const today=ymd(new Date());
-  sheet(`<div class="sheet-head"><h3>新しい旅</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <div class="field"><label>TRIP NAME ／ 旅の名前</label><input type="text" id="f-tname" placeholder="例: ハワイ卒業旅行 2026"></div>
-    <div class="row2">
-      <div class="field"><label>FROM ／ 出発日</label><input type="date" id="f-ts" value="${today}"></div>
-      <div class="field"><label>TO ／ 帰着日</label><input type="date" id="f-te" value="${today}"></div>
-    </div>
-    <button class="btn accent wfull" onclick="addTrip()">旅をつくる</button>`);
-}
-async function addTrip(){
-  const name=$("#f-tname").value.trim(),s=$("#f-ts").value,e=$("#f-te").value;
-  if(!name)return toast("旅の名前を入力してください");
-  if(!s||!e||s>e)return toast("日付を確認してください");
-  const t={id:uid(),name,start:s,end:e,flights:[],days:{}};
-  D.trips.push(t);
-  closeSheet();go("trip",t.id);await save();toast("旅のしおり作りをはじめましょう");
-}
-
-/* ============ VIEW: trip detail ============ */
-function vTrip(){
-  const t=trip(S.tripId);if(!t)return vTrips();
-  const days=daysBetween(t.start,t.end);
-  if(!S.dayKey||!days.includes(S.dayKey))S.dayKey=days[0];
-  const flights=(t.flights||[]).map(f=>`
-    <div class="flight-card">
-      <span class="fno">${esc(f.flightNo)}</span>
-      <div class="route">
-        <span class="t">${esc(f.depTime||"--:--")}</span> ${esc(f.depAirport||"???")}
-        → <span class="t">${esc(f.arrTime||"--:--")}</span> ${esc(f.arrAirport||"???")}
-        <div class="fdate">${fmtD(f.date)}</div>
-      </div>
-      <button class="xbtn" onclick="delFlight('${f.id}')" aria-label="削除">✕</button>
-    </div>`).join("");
-  const chips=days.map((d,i)=>{
-    const dt=new Date(d+"T00:00:00");
-    return `<button class="day-chip ${S.dayKey===d?'on':''}" onclick="S.dayKey='${d}';render()">
-      <span class="dw">DAY ${String(i+1).padStart(2,"0")}</span><span class="dd">${dt.getMonth()+1}/${dt.getDate()}</span>
-    </button>`;
-  }).join("");
-  return `<button class="back" onclick="go('trips')">← ITINERARIES</button>
-    <div class="hero">
-      <div class="eyebrow">Boarding&nbsp;/&nbsp;Itinerary</div>
-      <h2>${esc(t.name)}</h2>
-      <div class="dates">${fmtD(t.start)} — ${fmtD(t.end)} ・ ${days.length} DAYS</div>
-      <button class="xbtn" onclick="delTrip('${t.id}')" aria-label="旅を削除">✕</button>
-    </div>
-    <div class="eyebrow">Flights</div>
-    ${flights||`<p style="font-size:13px;color:var(--sub);margin-bottom:12px">便名を登録すると、出発・到着時刻がしおりに反映されます。</p>`}
-    <button class="btn ghost small" style="margin-bottom:26px" onclick="mAddFlight()">＋ 便を追加</button>
-    <div class="eyebrow">Day Plan</div>
-    <div class="day-chips">${chips}</div>
-    ${vDay(t)}
-    <div style="margin-top:28px">
-      <button class="btn wfull" onclick="mShiori()">旅のしおりを見る・シェア</button>
-    </div>`;
-}
-async function delTrip(id){
-  if(!confirm("この旅を削除しますか?"))return;
-  D.trips=D.trips.filter(t=>t.id!==id);
-  go("trips");await save();
-}
-function dayObj(t,key){
-  if(!t.days[key])t.days[key]={startTime:"09:00",items:[]};
-  return t.days[key];
-}
-function vDay(t){
-  const d=dayObj(t,S.dayKey);
-  const dayFlights=(t.flights||[]).filter(f=>f.date===S.dayKey);
-  let cur=d.startTime||"09:00";
-  const rows=[];
-  dayFlights.forEach(f=>{
-    rows.push(`<div class="tl-item">
-      <div class="tl-time">${esc(f.depTime||"")}<div class="end">${esc(f.arrTime||"")} 着</div></div>
-      <div class="tl-node" style="--dotc:var(--ink)"></div>
-      <div class="tl-flight"><div class="nm">✈ ${esc(f.flightNo)}</div>
-        <div class="gsm">${esc(f.depAirport||"?")} ${esc(f.depTime||"")} → ${esc(f.arrAirport||"?")} ${esc(f.arrTime||"")}</div></div>
-    </div>`);
-  });
-  d.items.forEach((it,i)=>{
-    const p=place(it.placeId);
-    if(i>0){
-      const tv=it.tMin;
-      cur=addMin(cur,tv||0);
-      const srcLbl=it.tSrc==="ai"?"AI":it.tSrc==="est"?"EST":it.tSrc==="manual"?"FIX":"";
-      rows.push(`<div class="tl-item travel">
-        <div class="tl-time"></div>
-        <div class="tl-node"></div>
-        <div class="travel-pill"><span class="car">🚗</span>DRIVE
-          <input type="number" min="0" step="5" value="${tv!=null?tv:""}" placeholder="--" onchange="setTravel(${i},this.value)" aria-label="移動時間(分)">分
-          ${srcLbl?`<span class="src">${srcLbl}</span>`:""}
-        </div>
-      </div>`);
-    }
-    const st=cur,en=addMin(cur,it.duration||60);cur=en;
-    const nm=p?p.name:(it.name||"(削除された行き先)");
-    const gn=p?p.genre:"";
-    rows.push(`<div class="tl-item">
-      <div class="tl-time">${st}<div class="end">— ${en}</div></div>
-      <div class="tl-node" style="--dotc:${p?genreColor(p.genre):'var(--line)'}"></div>
-      <div class="tl-card">
-        <div class="nm">${esc(nm)}</div>
-        ${gn?`<div class="gsm">${esc(gn)}</div>`:""}
-        <div class="tl-ctrl">
-          <input type="number" min="5" step="5" value="${it.duration||60}" onchange="setDur(${i},this.value)" aria-label="所要時間(分)">
-          <span class="u">分</span>
-          <button class="xbtn" onclick="moveItem(${i},-1)" aria-label="上へ">↑</button>
-          <button class="xbtn" onclick="moveItem(${i},1)" aria-label="下へ">↓</button>
-          <button class="xbtn" onclick="rmItem(${i})" aria-label="削除">✕</button>
-        </div>
-      </div>
-    </div>`);
-  });
-  const empty=(rows.length===0)?`<div class="empty" style="padding:30px 10px"><div class="mark">日</div><p>行き先リストから選んで、この日の予定を組みましょう。</p></div>`:"";
-  const busy=S.travelBusy?`<span class="drive-busy"><span class="spinner blue"></span>DRIVE TIME…</span>`:"";
-  return `<div class="dayhead">
-      <span class="start">START
-        <input type="time" value="${d.startTime||"09:00"}" onchange="setStart(this.value)"></span>
-      ${busy}
-      <button class="btn accent small" style="margin-left:auto" onclick="mPickPlaces()">＋ 行き先を追加</button>
-    </div>
-    <div class="tl">${rows.join("")}</div>${empty}`;
-}
-async function setStart(v){dayObj(trip(S.tripId),S.dayKey).startTime=v;render();await save();}
-async function setDur(i,v){dayObj(trip(S.tripId),S.dayKey).items[i].duration=Math.max(5,parseInt(v)||60);render();await save();}
-async function moveItem(i,dir){
-  const day=dayObj(trip(S.tripId),S.dayKey);
-  const j=i+dir;if(j<0||j>=day.items.length)return;
-  [day.items[i],day.items[j]]=[day.items[j],day.items[i]];
-  recalcTravel(day,true);
-  render();await save();autoAiTravel();
-}
-async function rmItem(i){
-  const day=dayObj(trip(S.tripId),S.dayKey);
-  day.items.splice(i,1);
-  recalcTravel(day,true);
-  render();await save();autoAiTravel();
-}
-
-/* ---- flight modal ---- */
-function mAddFlight(){
-  const t=trip(S.tripId);
-  sheet(`<div class="sheet-head"><h3>フライトを追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <div class="row2">
-      <div class="field"><label>FLIGHT NO ／ 便名</label><input type="text" id="f-fno" placeholder="NH182 / HA842" style="font-family:var(--mono);text-transform:uppercase"></div>
-      <div class="field"><label>DATE ／ 搭乗日</label><input type="date" id="f-fd" value="${t.start}" min="${t.start}" max="${t.end}"></div>
-    </div>
-    <button class="btn wfull" id="fl-go" onclick="aiFlight()">AIで時刻を調べる</button>
-    <div class="hint" style="margin:8px 0 16px">見つからない場合や違う場合は、下の欄で直接入力・修正できます。</div>
-    <div class="row2">
-      <div class="field"><label>FROM ／ 出発空港</label><input type="text" id="f-dap" placeholder="HND" style="font-family:var(--mono)"></div>
-      <div class="field"><label>DEP ／ 出発時刻</label><input type="time" id="f-dt"></div>
-    </div>
-    <div class="row2">
-      <div class="field"><label>TO ／ 到着空港</label><input type="text" id="f-aap" placeholder="HNL" style="font-family:var(--mono)"></div>
-      <div class="field"><label>ARR ／ 到着時刻</label><input type="time" id="f-at"></div>
-    </div>
-    <button class="btn accent wfull" onclick="addFlight()">このフライトを登録</button>`);
-}
-async function aiFlight(){
-  const no=$("#f-fno").value.trim().toUpperCase(),dt=$("#f-fd").value;
-  if(!no)return toast("便名を入力してください");
-  const b=$("#fl-go");b.disabled=true;b.innerHTML=`<span class="spinner"></span> 時刻表を調べています…`;
-  try{
-    const text=await askClaude(`航空便 ${no} (搭乗日: ${dt}) の運航スケジュールをウェブで調べて、JSONだけで回答してください。
-時刻はそれぞれの空港の現地時刻・24時間表記。確実な情報が見つからない場合は found を false に。
-出力(JSON以外は出力しない):
-{"found":true,"depAirport":"空港コード","depTime":"HH:MM","arrAirport":"空港コード","arrTime":"HH:MM"}`,true);
-    const j=pickJSON(text);
-    if(j.found){
-      $("#f-dap").value=j.depAirport||"";$("#f-dt").value=j.depTime||"";
-      $("#f-aap").value=j.arrAirport||"";$("#f-at").value=j.arrTime||"";
-      toast("時刻を反映しました。内容をご確認ください");
-    }else toast("時刻が見つかりませんでした。手入力してください");
-  }catch(e){toast("調査に失敗しました。手入力してください");}
-  b.disabled=false;b.textContent="AIで時刻を調べる";
-}
-async function addFlight(){
-  const no=$("#f-fno").value.trim().toUpperCase();
-  if(!no)return toast("便名を入力してください");
-  const t=trip(S.tripId);
-  t.flights.push({id:uid(),flightNo:no,date:$("#f-fd").value,
-    depAirport:$("#f-dap").value.trim().toUpperCase(),depTime:$("#f-dt").value,
-    arrAirport:$("#f-aap").value.trim().toUpperCase(),arrTime:$("#f-at").value});
-  closeSheet();render();await save();toast("フライトを登録しました");
-}
-async function delFlight(id){
-  const t=trip(S.tripId);
-  t.flights=t.flights.filter(f=>f.id!==id);
-  render();await save();
-}
-
-/* ---- place picker ---- */
-function mPickPlaces(){
-  if(D.places.length===0){toast("先に「行き先」タブで場所を登録してください");return;}
-  const byCity=D.cities.map(c=>{
-    const ps=D.places.filter(p=>p.cityId===c.id);
-    if(!ps.length)return"";
-    return `<div class="eyebrow" style="margin-top:16px">${esc(c.name)}</div>`+ps.map(p=>`
-      <label class="pick-item">
-        <input type="checkbox" value="${p.id}">
-        <span class="pi-body"><span class="n">${esc(p.name)}</span><br><span class="g">${esc(p.genre)}</span></span>
-        <span class="dur"><input type="number" min="5" step="5" value="60" data-dur="${p.id}">分</span>
-      </label>`).join("");
-  }).join("");
-  sheet(`<div class="sheet-head"><h3>${fmtD(S.dayKey)} に追加</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <p class="hint" style="margin-bottom:8px">行き先を選んで、それぞれの所要時間を入れるだけで旅程ができます。</p>
-    <div id="pick-list">${byCity}</div>
-    <button class="btn accent wfull" style="margin-top:14px" onclick="applyPick()">選んだ場所を旅程に入れる</button>`);
-}
-async function applyPick(){
-  const checks=[...document.querySelectorAll("#pick-list input[type=checkbox]:checked")];
-  if(!checks.length)return toast("行き先を選んでください");
-  const d=dayObj(trip(S.tripId),S.dayKey);
-  checks.forEach(ch=>{
-    const dur=parseInt(document.querySelector(`[data-dur="${ch.value}"]`).value)||60;
-    d.items.push({placeId:ch.value,duration:dur});
-  });
-  recalcTravel(d,false);
-  closeSheet();render();await save();
-  toast(checks.length+"件を追加。車の移動時間を計算します…");
-  autoAiTravel();
-}
-
-/* ============ shiori ============ */
-function buildShioriData(t){
-  const days=daysBetween(t.start,t.end);
-  return days.map(dk=>{
-    const d=t.days[dk]||{startTime:"09:00",items:[]};
-    const lines=[];
-    (t.flights||[]).filter(f=>f.date===dk).forEach(f=>{
-      lines.push({time:(f.depTime||"--:--")+" 発",name:"✈ "+f.flightNo+"  "+(f.depAirport||"?")+" → "+(f.arrAirport||"?")+" ("+(f.arrTime||"--:--")+" 着)",fl:true});
-    });
-    let cur=d.startTime||"09:00";
-    d.items.forEach((it,i)=>{
-      const p=place(it.placeId);
-      if(i>0&&it.tMin){
-        lines.push({time:"",name:"↓ 車で"+it.tMin+"分",tr:true});
-        cur=addMin(cur,it.tMin);
-      }
-      const en=addMin(cur,it.duration||60);
-      lines.push({time:cur+"–"+en,name:(p?p.name:"(未定)")+(p?" ― "+p.genre:"")});
-      cur=en;
-    });
-    return{date:dk,lines};
-  });
-}
-function mShiori(){
-  const t=trip(S.tripId);
-  const data=buildShioriData(t);
-  const html=data.map((d,i)=>`
-    <div class="sday"><h4>DAY ${String(i+1).padStart(2,"0")} — ${fmtD(d.date)}</h4>
-      ${d.lines.length?d.lines.map(l=>`<div class="sline ${l.fl?'fl':''}"${l.tr?' style="opacity:.55;font-size:11.5px"':''}><span class="st">${esc(l.time)}</span><span class="sn"${l.tr?' style="font-family:var(--mono)"':''}>${esc(l.name)}</span></div>`).join(""):`<div class="sline"><span class="st">—</span><span class="sn" style="color:var(--sub)">予定なし(のんびりデー)</span></div>`}
-    </div>`).join("");
-  sheet(`<div class="sheet-head"><h3>旅のしおり</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <div class="shiori">
-      <div class="head"><div class="eyebrow">Travel Itinerary</div>
-        <h2>${esc(t.name)}</h2>
-        <div class="sd">${fmtD(t.start)} — ${fmtD(t.end)}</div></div>
-      <div class="in">${html}</div>
-    </div>
-    <div class="row2">
-      <button class="btn ghost" style="flex:1" onclick="copyShiori()">コピー</button>
-      <button class="btn accent" style="flex:1" onclick="shareShiori()">シェア</button>
-    </div>`);
-}
-function shioriText(){
-  const t=trip(S.tripId);
-  let out="✈ "+t.name+"\n"+fmtD(t.start)+" — "+fmtD(t.end)+"\n";
-  buildShioriData(t).forEach((d,i)=>{
-    out+="\n▼ DAY"+(i+1)+"  "+fmtD(d.date)+"\n";
-    if(!d.lines.length)out+="  (予定なし)\n";
-    d.lines.forEach(l=>{out+="  "+l.time+"  "+l.name+"\n";});
-  });
-  out+="\n— TABI NOTE でつくった旅のしおり";
-  return out;
-}
-async function copyShiori(){
-  try{await navigator.clipboard.writeText(shioriText());toast("しおりをコピーしました");}
-  catch(e){toast("コピーできませんでした");}
-}
-async function shareShiori(){
-  const text=shioriText();
-  if(navigator.share){
-    try{await navigator.share({title:trip(S.tripId).name,text});}catch(e){}
-  }else copyShiori();
-}
-
-/* ============ data: backup / export / notion ============ */
-function dl(filename,content,mime){
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
-  a.download=filename;a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-}
-function mData(){
-  const n=D.places.length,t=D.trips.length;
-  sheet(`<div class="sheet-head"><h3>データの保存・連携</h3><button class="xbtn" onclick="closeSheet()">✕</button></div>
-    <p class="hint" style="margin-bottom:18px">現在のデータ: 都市 ${D.cities.length} ／ 行き先 ${n} ／ 旅程 ${t}。データは通常このアプリ内に自動保存されていますが、ここから手元へのバックアップやNotionへの連携ができます。</p>
-
-    <div class="eyebrow">Backup ／ 手元に保存</div>
-    <div class="row2" style="margin-bottom:6px">
-      <button class="btn ghost" style="flex:1" onclick="exportJSON()">JSON書き出し</button>
-      <button class="btn ghost" style="flex:1" onclick="$('#imp-file').click()">JSON読み込み</button>
-    </div>
-    <input type="file" id="imp-file" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
-    <p class="hint" style="margin-bottom:22px">全データを1ファイルに書き出し/復元します。旅の前のバックアップにおすすめ。</p>
-
-    <div class="eyebrow">Notion ／ 旅行プランを書き出す</div>
-    <p class="hint" style="margin-bottom:12px">旅先ごとにページを作成し、その中に「リスト」(行き先DB)と「旅程」(旅ごとのスケジュールDB)を作って書き出します。2回目以降は同名をスキップするので、追加分だけ反映されます。</p>
-    <div class="field"><label>書き出し先の親ページURL(空欄なら「TABI NOTE」ページを自動作成)</label>
-      <input type="text" id="f-notion-parent" value="${esc(D.notionParent||"")}" placeholder="https://www.notion.so/…"></div>
-    <button class="btn accent wfull" id="notion-go" onclick="notionExport()">Notionに書き出す</button>
-    <p class="hint" style="margin-top:8px">※表示形式(「リスト」=ギャラリー/「旅程」=リスト)は自動設定を試みます。反映されていない場合のみ、Notion側でビューを切り替えてください。</p>
-    <div id="notion-out"></div>
-    <hr class="rule" style="margin:20px 0">
-    <button class="btn ghost wfull" style="margin-bottom:6px" onclick="exportCSV()">行き先リストをCSV書き出し(予備)</button>
-    <p class="hint">Notionのデータベース「…」→「インポート」で手動で取り込む場合はこちら。</p>`);
-}
-function exportJSON(){
-  dl("tabinote-backup-"+ymd(new Date())+".json",JSON.stringify(D,null,2),"application/json");
-  toast("バックアップを書き出しました");
-}
-async function importJSON(inp){
-  const f=inp.files[0];if(!f)return;
-  try{
-    const txt=await f.text();
-    const j=JSON.parse(txt);
-    if(!j.cities||!j.places||!j.trips)throw new Error("形式が違います");
-    if(!confirm("現在のデータをこのバックアップで置き換えます。よろしいですか?"))return;
-    D=j;if(!D.customGenres)D.customGenres=[];
-    migrateDays();
-    closeSheet();render();await save();toast("バックアップを復元しました");
-  }catch(e){toast("読み込めませんでした: "+(e.message||"不正なファイル"));}
-  inp.value="";
-}
-function csvEsc(v){v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function exportCSV(){
-  const rows=[["都市","タイトル","ジャンル","説明","MapURL","緯度","経度"]];
-  D.places.forEach(p=>{
-    const c=city(p.cityId);
-    rows.push([c?c.name:"",p.name,p.genre,p.summary||"",mapLink(p),p.lat??"",p.lng??""]);
-  });
-  const csv="\uFEFF"+rows.map(r=>r.map(csvEsc).join(",")).join("\n");
-  dl("tabinote-places-"+ymd(new Date())+".csv",csv,"text/csv");
-  toast("CSVを書き出しました。Notionのインポートで取り込めます");
-}
-function tripCityId(t){
-  const counts={};
-  Object.values(t.days||{}).forEach(d=>(d.items||[]).forEach(it=>{
-    const p=place(it.placeId);if(p&&p.cityId)counts[p.cityId]=(counts[p.cityId]||0)+1;
-  }));
-  let best=null,bn=0;
-  Object.entries(counts).forEach(([k,v])=>{if(v>bn){bn=v;best=k}});
-  return best||(D.cities[0]?D.cities[0].id:null);
-}
-function tripMarkdown(t){
-  let out="期間: "+fmtD(t.start)+" — "+fmtD(t.end)+"\n";
-  (t.flights||[]).forEach(f=>{
-    out+="✈ "+f.flightNo+"  "+fmtD(f.date)+"  "+(f.depAirport||"?")+" "+(f.depTime||"--:--")+" → "+(f.arrAirport||"?")+" "+(f.arrTime||"--:--")+"\n";
-  });
-  buildShioriData(t).forEach((d,i)=>{
-    out+="\n## DAY "+String(i+1).padStart(2,"0")+" — "+fmtD(d.date)+"\n";
-    if(!d.lines.length){out+="- 予定なし\n";return;}
-    d.lines.forEach(l=>{out+="- "+(l.time?l.time+"  ":"")+l.name+"\n";});
-  });
-  return out;
-}
-async function notionCall(prompt){
-  const body={model:"claude-sonnet-4-6",max_tokens:8000,
-    messages:[{role:"user",content:prompt}],
-    mcp_servers:[{type:"url",url:"https://mcp.notion.com/mcp",name:"notion"}]};
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  const data=await res.json();
-  if(data.error)throw new Error(data.error.message||"API error");
-  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
-  if(!text)throw new Error("応答がありませんでした");
-  return text;
-}
-async function notionExport(){
-  let parent=$("#f-notion-parent").value.trim();
-  const btn=$("#notion-go");
-  const targets=D.cities.map(c=>{
-    const places=D.places.filter(p=>p.cityId===c.id).map(p=>({
-      名前:p.name,ジャンル:p.genre,説明:p.summary||"",MAP:mapLink(p)}));
-    const trips=D.trips.filter(t=>tripCityId(t)===c.id).map(t=>({
-      名前:t.name,開始日:t.start,終了日:t.end,body:tripMarkdown(t)}));
-    return{city:c.name,places,trips};
-  }).filter(x=>x.places.length||x.trips.length);
-  if(!targets.length)return toast("書き出すデータがありません");
-  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span> 書き出し中…`;
-  const steps=targets.length+(parent?0:1);let done=0;
-  $("#notion-out").innerHTML=`<div class="prog"><div class="prog-bar"><i id="np-bar" style="width:3%"></i></div>
-    <div class="prog-txt" id="np-txt">STARTING…</div></div><div id="np-log"></div>`;
-  const log=(cls,msg)=>{const el=$("#np-log");if(el)el.insertAdjacentHTML("beforeend",
-    `<div class="ai-result" style="margin:10px 0;padding:12px 14px"><div class="lbl ${cls}">${cls==="err"?"FAILED":"DONE"}</div><p style="font-size:12.5px;white-space:pre-wrap">${esc(msg)}</p></div>`);};
-  const tick=(label)=>{done++;const b=$("#np-bar"),t=$("#np-txt");
-    if(b)b.style.width=Math.round(done/steps*100)+"%";
-    if(t)t.textContent=label;};
-  try{
-    if(!parent){
-      const t=$("#np-txt");if(t)t.textContent="親ページ「TABI NOTE」を準備中…";
-      const txt=await notionCall(`Notionのツールを使って作業してください。
-「TABI NOTE」という名前のページをまず検索し、あればそのページを使う。なければプライベートページとして新規作成する。
-最後にそのページのURLだけを、次のJSON形式で出力(JSON以外は一切出力しない): {"url":"https://…"}`);
-      parent=pickJSON(txt).url;
-      D.notionParent=parent;const inp=$("#f-notion-parent");if(inp)inp.value=parent;
-      await save();
-      tick("親ページ OK");
-    }
-    for(const tg of targets){
-      const t=$("#np-txt");if(t)t.textContent=`「${tg.city}」を書き出し中…(${done}/${steps})`;
-      try{
-        const report=await notionCall(`Notionのツールを使って、次の作業を上から順にすべて実行してください。途中で確認を求めず最後まで実行すること。
-親ページ: ${parent}
-
-1. 親ページの中に「${tg.city}」というタイトルの子ページを検索し、なければ作成する。
-2. 「${tg.city}」ページの中にデータベース「リスト」を検索し、なければインラインで作成する。プロパティは「名前」(タイトル)、「ジャンル」(セレクト)、「説明」(リッチテキスト)、「MAP」(URL)。ビューを作成・変更できるツールがあれば、既定ビューまたは新規ビューをギャラリー表示に設定する(できなければそのままでよい)。
-3. 「リスト」に以下の行き先を1件ずつページとして追加する。同じ名前のページが既にある場合はその行き先をスキップ。
-${JSON.stringify(tg.places)}
-4. 「${tg.city}」ページの中にデータベース「旅程」を検索し、なければインラインで作成する。プロパティは「名前」(タイトル)、「期間」(日付。開始日〜終了日)。ビューを作成・変更できるツールがあれば、既定ビューまたは新規ビューをリスト表示に設定する(できなければそのままでよい)。
-5. 「旅程」に以下の旅を1件ずつページとして追加する。「期間」には開始日と終了日を設定し、ページ本文には body のマークダウンを見出し・箇条書きとして書き込む。同名のページが既にある場合はスキップ。
-${JSON.stringify(tg.trips)}
-6. 最後に結果を日本語で簡潔に報告する: 行き先の追加/スキップ件数、旅程の追加/スキップ件数。`);
-        log("","「"+tg.city+"」\n"+report);
-      }catch(e){
-        log("err","「"+tg.city+"」: "+(e.message||"失敗"));
-      }
-      tick(`「${tg.city}」完了 (${done}/${steps})`);
-    }
-    const t2=$("#np-txt");if(t2)t2.textContent="ALL DONE — 書き出しが完了しました";
-    toast("Notionへの書き出しが完了しました");
-  }catch(e){
-    const t2=$("#np-txt");if(t2)t2.textContent="STOPPED";
-    log("err",(e.message||"失敗")+"\n\nNotionコネクタの接続(設定→コネクタ)と、対象ページへのアクセス許可をご確認ください。");
-  }
-  btn.disabled=false;btn.textContent="Notionに書き出す";
-}
-
-/* ============ sheet ============ */
-function sheet(inner){
-  $("#modal-root").innerHTML=`<div class="overlay" onclick="if(event.target===this)closeSheet()">
-    <div class="sheet"><div class="grab"></div>${inner}</div></div>`;
-}
-function closeSheet(){$("#modal-root").innerHTML="";}
-
-load();
-
 </script>
 </body>
 </html>

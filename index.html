@@ -101,7 +101,12 @@ select.inp{padding-right:36px;background:var(--sunk) url("data:image/svg+xml,%3C
 .dots i{width:4px;height:4px;border-radius:50%;background:var(--coral)}
 .day[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
 .day[aria-pressed=true] .d1,.day[aria-pressed=true] small{color:inherit;opacity:.7}
-.nodates{padding:28px 0}
+.nodates{padding:clamp(40px,7vw,72px) 28px;text-align:center;display:grid;justify-items:center}
+.nodates .ndicon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);margin-bottom:18px}
+.nodates .ndicon svg.i{width:26px;height:26px}
+.nodates h2{margin-top:8px}
+.nodates .note{max-width:30em;margin:10px auto 0;font-size:14px}
+.nodates .go{margin-top:24px}
 /* plan */
 .work{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start;margin-top:6px}
 .dayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;margin-bottom:20px}
@@ -349,6 +354,8 @@ select.inp{padding-right:36px;background:var(--sunk) url("data:image/svg+xml,%3C
 <script>
 {
 const DS='f598bd39-d249-83fb-8109-87b5173e55c5', DBID='3b98bd39d24980579a7dda16bc9f2cc2';
+/* 公開版（GitHub Pagesなど claude.ai の外）：スポットは spots.json から読み、Notionには書き込まない。プランはブラウザに保存 */
+const PUBLIC=!(window.claude&&typeof window.claude.use==='function');
 const VIEW='https://www.notion.so/3b98bd39d24980579a7dda16bc9f2cc2?v=3b98bd39d24980c0844e000cadaac415';
 const AIRPORT={id:'airport',title:'ホノルル空港（HNL）',lat:21.3187,lng:-157.9225};
 const CAT_ORDER=['朝食🥞','ランチ🍝','夕食🍴','カフェ☕️','スイーツ🍦','買い物🛍️','スーパー🛒','ビーチ🏖️','自然系⛰️','公園🛝','娯楽系🎡','文化系✏️','ホテル🏨','移動🚗','駐車場🅿️'];
@@ -489,7 +496,7 @@ function renderTrip(){
 function renderDays(){
   const list=dates(); const box=$('#days');
   if(!list.length){box.innerHTML='';$('#work').hidden=true;
-    if(!$('#nodates')) box.insertAdjacentHTML('afterend','<div class="panel nodates" id="nodates"><p class="eyebrow">Plan</p><h2>まず日程を決めましょう</h2><p class="note">Tripタブで出発日と帰国日を入れると、ここに1日ずつ並びます。</p><p style="margin-top:16px"><a class="primary" href="#trip">Tripタブへ</a></p></div>');
+    if(!$('#nodates')) box.insertAdjacentHTML('afterend','<div class="panel nodates" id="nodates"><span class="ndicon" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><p class="eyebrow">Plan</p><h2>まず日程を決めましょう</h2><p class="note">Tripタブで出発日と帰国日を入れると、ここに1日ずつ並びます。</p><p class="go"><a class="primary" href="#trip">Tripタブへ</a></p></div>');
     return}
   $('#nodates')?.remove(); $('#work').hidden=false;
   if(!list.includes(sel)) sel=list[0];
@@ -562,7 +569,7 @@ function renderPicker(){
 const viewUrl=()=>state.viewId?`https://www.notion.so/${DBID}?v=${state.viewId.replace('view://','').replace(/-/g,'')}`:'';
 function renderShiori(){
   const list=dates(), v=$('#vShiori'), f=state.flights;
-  if(!list.length){v.innerHTML='<div class="panel"><p class="eyebrow">Itinerary</p><h2>まだしおりがありません</h2><p class="note">Planで日程と行き先を決めて、Create itineraryを押してください。</p></div>';return}
+  if(!list.length){v.innerHTML='<div class="panel nodates"><span class="ndicon" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M10 12h5M10 15.5h5"/></svg></span><p class="eyebrow">Itinerary</p><h2>まだしおりがありません</h2><p class="note">Planで日程と行き先を決めて、Create itineraryを押してください。</p><p class="go"><a class="primary" href="#plan">Planタブへ</a></p></div>';return}
   const a=list[0], b=list[list.length-1];
   let nStops=0, drv=0; list.forEach(d=>{const c=computeDay(d); nStops+=c.rows.length; c.rows.forEach(r=>{if(r.from)drv+=r.leg}); if(c.end&&c.rows.length)drv+=c.end.leg});
   const stat=(v,l)=>`<div><b style="display:block;font:800 26px/1.1 var(--sans);letter-spacing:-.02em">${v}</b><span class="meta">${l}</span></div>`;
@@ -574,7 +581,7 @@ function renderShiori(){
     <div class="tfoot"><div><span class="eyebrow">Boarding pass</span><br><b>${esc(state.title||'My trip')}</b></div><i class="barcode" aria-hidden="true"></i></div></div></div>`;
   list.forEach((d,i)=>{const c=computeDay(d), t=ymd(d);
     h+=`<section class="sday"><header><span class="eyebrow">Day ${i+1}</span><h3>${WDL[t.w]}, ${MONL[t.m-1]} ${t.d}</h3><span>${dlong(d)}</span></header><div class="panel">${tlHtml(c,false)}</div></section>`});
-  h+=`<div class="tools"><button class="primary" id="resync">Sync to Notion</button><button class="ghost" id="copy">Copy as text</button>${viewUrl()?`<a class="ghost" href="${viewUrl()}" target="_blank" rel="noopener">Open in Notion ${ICON.out}</a>`:''}</div>
+  h+=`<div class="tools">${PUBLIC?'':'<button class="primary" id="resync">Sync to Notion</button>'}<button class="ghost" id="copy">Copy as text</button>${viewUrl()?`<a class="ghost" href="${viewUrl()}" target="_blank" rel="noopener">Open in Notion ${ICON.out}</a>`:''}</div>
   <p class="msg" id="copyMsg"></p><p class="note">移動時間は2地点の距離から推定した目安です。実際の道路状況はGoogleマップで確認してください。</p>`;
   v.innerHTML=h;
 }
@@ -693,6 +700,13 @@ addEventListener('hashchange',()=>{route();scrollTo({top:0})});
 function mcpMsg(e){const c=e&&e.code;return ({server_not_connected:'Notionが接続されていません。claude.aiの設定 → コネクタでNotionを追加してください。',needs_reauth:'Notionの接続が切れています。claude.aiの設定 → コネクタで再接続してください。',not_in_manifest:'このページでのNotionの利用が許可されていません。',approval_required:'Notionを使う許可が必要です。',selection_required:'使うNotionコネクタを選んでください。',blocked_by_policy:'組織の設定でNotionが使えません。',server_unavailable:'Notionが一時的に応答しません。少し待ってください。',tool_error:'Notionがエラーを返しました：'+String(e&&e.message||'').slice(0,120)}[c])||`Notionにつながりませんでした（${c||'不明'}）`}
 const pay=r=>{let p=r&&r.payload;if(typeof p==='string'){try{p=JSON.parse(p)}catch(e){}}return p||{}};
 async function loadSpots(){
+  if(PUBLIC){
+    setN('スポットを読み込み中…');
+    try{ const r=await fetch('spots.json?t='+Date.now()); if(!r.ok) throw new Error(r.status); const j=await r.json();
+      spots=(j.spots||[]).filter(s=>s&&s.url); lsSet(LS_SPOTS,spots);
+      setN(`スポット${spots.length}件${j.updated?`（${esc(j.updated)}時点）`:''}　<a href="${esc(j.notion||'')}" target="_blank" rel="noopener">Notionで見る ↗</a>`); renderAll();
+    }catch(e){ setN(spots.length?`前回の${spots.length}件を表示中 <button data-retry="1">再読み込み</button>`:'スポットを読み込めませんでした <button data-retry="1">再読み込み</button>') }
+    return }
   if(!mcp){setN(spots.length?`前回の${spots.length}件を表示中（接続なし）`:'このページからNotionに接続できません');return}
   setN('スポットを読み込み中…');
   try{
@@ -765,6 +779,7 @@ async function ensureColumns(call){
 let pendingDelete=[];
 async function syncNotion(){
   const say=(t,bad)=>{for(const x of [$('#syncMsg'),$('#copyMsg')]) if(x){x.textContent=t;x.className='msg'+(bad?' bad':'')}};
+  if(PUBLIC){say('しおりを作りました。このブラウザに保存されています。');return}
   if(syncing) return; if(!mcp){say('Notionにつながらないため、しおりだけ保存しました。');return}
   syncing=true; const call=(tool,input)=>mcp.callTool('Notion',tool,input);
   try{
@@ -800,13 +815,19 @@ async function closeModal(del){
 $('#mYes').addEventListener('click',()=>closeModal(true)); $('#mNo').addEventListener('click',()=>closeModal(false));
 function finish(){
   const m=$('#syncMsg'); const bad=t=>{m.textContent=t;m.className='msg bad'};
-  if(!String(state.title||'').trim()){bad('先にTripタブで旅行名を入れてください（Notionのビュー名になります）。');return}
+  if(!String(state.title||'').trim()){bad(PUBLIC?'先にTripタブで旅行名を入れてください。':'先にTripタブで旅行名を入れてください（Notionのビュー名になります）。');return}
   if(!dates().length){bad('先にTripタブで出発日と帰国日を入れてください。');return}
   if(!dates().some(d=>(state.days[d]?.stops||[]).length)){bad('どこか1か所は予定を入れてください。');return}
   state.finalizedAt=Date.now(); touch(); location.hash='#shiori'; syncNotion();
 }
 
 /* ---------- 起動 ---------- */
+if(PUBLIC){ /* Notion連携の説明を公開版向けに差し替え */
+  const n=$('#title')?.parentElement?.querySelector('small'); if(n) n.textContent='しおりの名前になります。';
+  $$('#vTrip .note').forEach(p=>{if(p.textContent.includes('Notion'))p.hidden=true});
+  const sec=$('#vTrip .nStat')?.closest('section'); if(sec){ sec.querySelector('.eyebrow').innerHTML='Data<span class="ja">スポットと保存</span>'; sec.querySelector('h2').textContent='Spots' }
+  const sm=$('#syncMsg'); if(sm) sm.textContent='しおりを作ります（このブラウザに保存されます）。';
+}
 renderAll(); route();
 (async()=>{
   try{ db=await claude.use('db') }catch(e){ db=null }

@@ -133,6 +133,15 @@ select.inp{padding-right:36px;background:var(--sunk) url("data:image/svg+xml,%3C
 .leg .body button,.leg .body a{border:0;background:none;padding:8px 0;color:var(--accent);font:600 13px var(--sans);text-decoration:underline;text-underline-offset:3px}
 .leg .body .i{width:16px;height:16px}
 .acts{display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap}
+/* 長押しで並び替え */
+#editor .tl>li.stop{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:16px;transition:box-shadow .15s,background .15s}
+#editor .tl>li.stop.lift{position:relative;z-index:5;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.2),0 0 0 2px var(--coral);transition:none;will-change:transform}
+#editor.sorting .tl>li:not(.lift){opacity:.55}
+#editor.sorting .tl>li.stop:not(.lift){opacity:1}
+#editor .tl>li.stop.dropb{box-shadow:0 -3px 0 0 var(--coral)}
+#editor .tl>li.stop.dropa{box-shadow:0 3px 0 0 var(--coral)}
+#editor.sorting{touch-action:none}
+.sorthint{margin:4px 0 0;font-size:12.5px;color:var(--mute);text-align:center}
 .stay{display:inline-flex;align-items:center;gap:6px;min-height:42px;border:1px solid var(--line);border-radius:12px;padding:0 4px 0 10px;background:var(--surface);color:var(--mute)}
 .stay select{appearance:none;-webkit-appearance:none;border:0;background:none;font:700 14px var(--sans);color:var(--ink);min-height:40px;padding:0 6px}
 .ic{width:42px;height:42px;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:grid;place-items:center;color:var(--ink)}
@@ -536,8 +545,10 @@ function renderEditor(){
   const ed=$('#editor'); const list=dates(); if(!list.length){ed.innerHTML='';return}
   const c=computeDay(sel), i=list.indexOf(sel), t=ymd(sel);
   ed.innerHTML=`<div class="dayhead"><div><p class="eyebrow">Day ${i+1} · ${WDL[t.w]}</p><h2>${MONL[t.m-1]} ${t.d}</h2></div>
-    <label class="startctl"><span>Start</span><input type="time" id="start" value="${hm(c.start)}" aria-label="出発時刻"></label></div>`+tlHtml(c,true);
+    <label class="startctl"><span>Start</span><input type="time" id="start" value="${hm(c.start)}" aria-label="出発時刻"></label></div>`+tlHtml(c,true)
+    +(c.rows.length>1&&isTouch()?'<p class="sorthint">予定を長押しすると、指で動かして並び替えられます</p>':'');
 }
+const isTouch=()=>!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window);
 function usedMap(){const m=new Map();dates().forEach((d,i)=>(state.days[d]?.stops||[]).forEach(s=>{if(!m.has(s.id))m.set(s.id,[]);m.get(s.id).push(i+1)}));return m}
 function distHtml(x){
   if(x.here) return `<div class="dist na"><b>Here</b></div>`;
@@ -596,13 +607,19 @@ function asText(){
 /* カバー写真：旅行ごとに差し替え可（assets）。未設定ならハワイの既定写真 */
 const DEF_SRCSET='img/hero-900.jpg 900w, img/hero-1600.jpg 1600w, img/hero-2400.jpg 2400w';
 let assets=null, coverShown='';
+/* assets が使えない所（公開版）では、写真を縮小してこのブラウザ（localStorage）に旅行ごとに保存する */
+const LS_COVER='hawaii-planner-cover:';
+const localCover=()=>{try{return localStorage.getItem(LS_COVER+curId)}catch(e){return null}};
 function applyCover(){
-  const id=state.cover&&state.cover.id, img=$('#heroImg'), want=id?'blob:'+id:'default';
-  $('#coverReset').hidden=!id; $('#credit').hidden=!!id;
+  const c=state.cover||null, id=c&&c.id, loc=c&&c.local?localCover():null, custom=!!(id||loc), img=$('#heroImg');
+  const want=id?'blob:'+id:loc?'local:'+curId+':'+(c.v||0):'default';
+  $('#coverReset').hidden=!custom; $('#credit').hidden=custom;
   if(want===coverShown) return; coverShown=want;
   if(id){img.removeAttribute('srcset');img.src='/_blob/'+encodeURIComponent(id)}
+  else if(loc){img.removeAttribute('srcset');img.src=loc}
   else{img.setAttribute('srcset',DEF_SRCSET);img.src='img/hero-1600.jpg'}
 }
+const blobToDataUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b)});
 async function shrink(file,max,q){
   let bmp=null; try{bmp=await createImageBitmap(file)}catch(e){return file}
   const k=Math.min(1,max/Math.max(bmp.width,bmp.height)), c=document.createElement('canvas');
@@ -611,8 +628,16 @@ async function shrink(file,max,q){
 }
 const coverUsedElsewhere=id=>Object.entries(trips).some(([k,t])=>k!==curId&&t.cover&&t.cover.id===id);
 async function setCover(file){
-  if(!assets||!file) return;
+  if(!file) return;
   if(!/^image\//.test(file.type||'image/')){toast('画像ファイルを選んでください');return}
+  if(!assets){ /* このブラウザに保存 */
+    try{
+      let url=await blobToDataUrl(await shrink(file,1800,.82));
+      try{ localStorage.setItem(LS_COVER+curId,url) }
+      catch(e){ url=await blobToDataUrl(await shrink(file,1100,.72)); localStorage.setItem(LS_COVER+curId,url) }
+      state.cover={local:true,v:Date.now()}; touch(); toast('Cover updated');
+    }catch(e){ toast('写真を保存できませんでした（容量が足りない可能性があります）') }
+    return }
   toast('Uploading…');
   try{
     const blob=await shrink(file,2200,.84), r=await assets.upload(blob), old=state.cover&&state.cover.id;
@@ -620,7 +645,7 @@ async function setCover(file){
     if(old&&old!==r.id&&!coverUsedElsewhere(old)) assets.delete(old).catch(()=>{});
   }catch(e){toast('写真を変更できませんでした')}
 }
-function resetCover(){const old=state.cover&&state.cover.id; state.cover=null; touch(); toast('Default cover'); if(old&&assets&&!coverUsedElsewhere(old)) assets.delete(old).catch(()=>{})}
+function resetCover(){const old=state.cover&&state.cover.id; if(state.cover&&state.cover.local){try{localStorage.removeItem(LS_COVER+curId)}catch(e){}} state.cover=null; touch(); toast('Default cover'); if(old&&assets&&!coverUsedElsewhere(old)) assets.delete(old).catch(()=>{})}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('on'),2200)}
 function openSheet(){ if(!isMobile()){ $('#q').focus(); return } $('#picker').classList.add('open'); $('#scrim').classList.add('on'); document.body.classList.add('lock'); setTimeout(()=>$('#sheetDone').focus({preventScroll:true}),50) }
 function closeSheet(){ $('#picker').classList.remove('open'); $('#scrim').classList.remove('on'); document.body.classList.remove('lock') }
@@ -696,6 +721,40 @@ function route(){
   document.body.dataset.view=v; if(v!=='plan') closeSheet(); if(v==='shiori') renderShiori();
 }
 addEventListener('hashchange',()=>{route();scrollTo({top:0})});
+
+/* ---------- 長押しで並び替え（タッチ） ---------- */
+let drag=null;
+const stopEls=()=>[...$('#editor').querySelectorAll('.tl>li.stop')];
+function dragClear(){ if(!drag) return; clearTimeout(drag.timer); cancelAnimationFrame(drag.raf||0);
+  stopEls().forEach(el=>{el.classList.remove('lift','dropb','dropa');el.style.transform=''}); $('#editor').classList.remove('sorting'); drag=null }
+function dragMark(){ const others=stopEls().filter(el=>el!==drag.li); others.forEach(el=>el.classList.remove('dropb','dropa'));
+  if(drag.to===drag.from) return; if(drag.to<others.length) others[drag.to].classList.add('dropb'); else others[others.length-1].classList.add('dropa') }
+function dragMove(){ const r=drag.rects[drag.from], a=drag.rects[0], z=drag.rects[drag.rects.length-1];
+  const dy=Math.max(a.top-r.top-24,Math.min(z.top+z.h-(r.top+r.h)+24,drag.y+scrollY-drag.py0)), cy=r.top+r.h/2+dy;
+  drag.li.style.transform=`translateY(${dy}px) scale(1.02)`;
+  let to=0; drag.rects.forEach((q,i)=>{if(i!==drag.from&&cy>q.top+q.h/2)to++}); if(to!==drag.to){drag.to=to;dragMark()} }
+function dragLoop(){ if(!drag||!drag.on) return; const edge=90, bottom=innerHeight-(isMobile()?150:60); let v=0;
+  if(drag.y<edge) v=-Math.ceil((edge-drag.y)/6); else if(drag.y>bottom) v=Math.ceil((drag.y-bottom)/6);
+  if((v>0&&scrollY>=drag.maxScroll)||(v<0&&scrollY<=0)) v=0;
+  if(v){ scrollBy(0,v); dragMove() } drag.raf=requestAnimationFrame(dragLoop) }
+function dragStart(){ if(!drag) return; drag.on=true; drag.py0=drag.y+scrollY; drag.maxScroll=Math.max(0,document.documentElement.scrollHeight-innerHeight);
+  drag.rects=stopEls().map(el=>{const r=el.getBoundingClientRect();return {top:r.top+scrollY,h:r.height}});
+  drag.li.classList.add('lift'); drag.li.style.transform='scale(1.02)'; $('#editor').classList.add('sorting');
+  try{navigator.vibrate&&navigator.vibrate(12)}catch(e){} drag.raf=requestAnimationFrame(dragLoop) }
+$('#editor').addEventListener('touchstart',e=>{
+  if(drag||e.touches.length>1) return; const li=e.target.closest('.tl>li.stop');
+  if(!li||e.target.closest('button,select,input,a,label')) return;
+  const els=stopEls(), from=els.indexOf(li); if(from<0||els.length<2) return;
+  const t=e.touches[0]; drag={li,from,to:from,x:t.clientX,y:t.clientY,on:false,timer:setTimeout(dragStart,380)};
+},{passive:true});
+addEventListener('touchmove',e=>{ if(!drag) return; const t=e.touches[0];
+  if(!drag.on){ if(Math.hypot(t.clientX-drag.x,t.clientY-drag.y)>10) dragClear(); return }
+  e.preventDefault(); drag.y=t.clientY; dragMove() },{passive:false});
+addEventListener('touchend',e=>{ if(!drag) return; if(!drag.on){dragClear();return}
+  e.preventDefault(); const {from,to}=drag; dragClear();
+  const st=state.days[sel]&&state.days[sel].stops; if(st&&to!==from){const [m]=st.splice(from,1); st.splice(to,0,m); touch(); toast('並び替えました')} },{passive:false});
+addEventListener('touchcancel',()=>dragClear());
+$('#editor').addEventListener('contextmenu',e=>{if(drag)e.preventDefault()});
 
 /* ---------- Notion ---------- */
 function mcpMsg(e){const c=e&&e.code;return ({server_not_connected:'Notionが接続されていません。claude.aiの設定 → コネクタでNotionを追加してください。',needs_reauth:'Notionの接続が切れています。claude.aiの設定 → コネクタで再接続してください。',not_in_manifest:'このページでのNotionの利用が許可されていません。',approval_required:'Notionを使う許可が必要です。',selection_required:'使うNotionコネクタを選んでください。',blocked_by_policy:'組織の設定でNotionが使えません。',server_unavailable:'Notionが一時的に応答しません。少し待ってください。',tool_error:'Notionがエラーを返しました：'+String(e&&e.message||'').slice(0,120)}[c])||`Notionにつながりませんでした（${c||'不明'}）`}
@@ -856,7 +915,7 @@ renderAll(); route();
   },err=>{clearTimeout(loadTimer);db=null;setS('サーバーに保存できません（この端末に保存）',true)});
 })();
 (async()=>{ try{ mcp=await claude.use('mcp') }catch(e){ mcp=null } loadSpots() })();
-(async()=>{ try{ assets=await claude.use('assets') }catch(e){ assets=null } $$('.coverPick').forEach(b=>b.hidden=!assets); $('.coverRow').hidden=!assets })();
+(async()=>{ try{ assets=await claude.use('assets') }catch(e){ assets=null } $$('.coverPick').forEach(b=>b.hidden=false); $('.coverRow').hidden=false; applyCover() })();
 }
 </script>
 </body>
